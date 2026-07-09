@@ -3,7 +3,7 @@
 import { db } from '@/db';
 import { events } from '@/db/schema';
 import { CalendarViewType } from '@/types/event';
-import { and, between, eq, ilike, or, lte, gte } from 'drizzle-orm';
+import { and, between, eq, ilike, or, lte, gte, ne } from 'drizzle-orm';
 import {
   startOfDay,
   endOfDay,
@@ -30,7 +30,13 @@ const REVALIDATE_TIME = 3600;
 export const getEvents = cache(
   async (filterParams: EventFilter) => {
     try {
+      console.log(
+        '🔍 [getEvents] Starting event fetch with params:',
+        filterParams,
+      );
+
       const filter = eventFilterSchema.parse(filterParams);
+      console.log('✅ [getEvents] Filter validation passed:', filter);
 
       const currentDate = new Date(filter.date);
       let dateRange: { start: Date; end: Date } = {
@@ -46,15 +52,18 @@ export const getEvents = cache(
             };
             break;
           case CalendarViewType.DAYS:
-            const daysToAdd = filter.daysCount || 7;
-            dateRange = {
-              start: startOfDay(currentDate),
-              end: endOfDay(
-                new Date(
-                  currentDate.getTime() + (daysToAdd - 1) * 24 * 60 * 60 * 1000,
+            {
+              const daysToAdd = filter.daysCount || 7;
+              dateRange = {
+                start: startOfDay(currentDate),
+                end: endOfDay(
+                  new Date(
+                    currentDate.getTime() +
+                      (daysToAdd - 1) * 24 * 60 * 60 * 1000,
+                  ),
                 ),
-              ),
-            };
+              };
+            }
             break;
           case CalendarViewType.WEEK:
             dateRange = {
@@ -76,6 +85,15 @@ export const getEvents = cache(
             break;
         }
       }
+
+      console.log('📅 [getEvents] Date range calculated:', {
+        view: filter.view,
+        currentDate: currentDate.toISOString(),
+        dateRange: {
+          start: dateRange.start.toISOString(),
+          end: dateRange.end.toISOString(),
+        },
+      });
 
       const conditions = [];
 
@@ -121,16 +139,15 @@ export const getEvents = cache(
         conditions.push(or(...locationConditions));
       }
 
-      //   if (filter.repeatingTypes.length > 0) {
-      //     const typeConditions = filter.repeatingTypes.map((type) =>
-      //       eq(events.repeatingType, type),
-      //     );
-      //     conditions.push(or(...typeConditions));
-      //   }
-
       if (filter.isRepeating) {
         conditions.push(eq(events.isRepeating, filter.isRepeating));
       }
+
+      console.log(
+        '🔍 [getEvents] Query conditions:',
+        conditions.length,
+        'conditions',
+      );
 
       const result = await db
         .select()
@@ -138,13 +155,27 @@ export const getEvents = cache(
         .where(and(...conditions))
         .execute();
 
+      console.log('✅ [getEvents] Raw database result:', {
+        count: result.length,
+        firstEvent: result[0]
+          ? {
+              id: result[0].id,
+              title: result[0].title,
+              startDate: result[0].startDate,
+              endDate: result[0].endDate,
+              startTime: result[0].startTime,
+              endTime: result[0].endTime,
+            }
+          : 'No events found',
+      });
+
       return {
         events: result,
         success: true,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error('❌ [getEvents] Error fetching events:', error);
       return {
         events: [],
         success: false,
@@ -276,12 +307,117 @@ export async function getCategories() {
   }
 }
 
+export async function checkEventConflicts(
+  eventData: z.infer<typeof createEventSchema>,
+  excludeEventId?: string,
+) {
+  try {
+    const { startDate, endDate, startTime, endTime, location } = eventData;
+
+    console.log('[checkEventConflicts] Starting conflict check:', {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      startTime,
+      endTime,
+      location,
+      excludeEventId,
+    });
+
+    // Combine date and time for proper comparison
+    const startDateTime = combineDateAndTime(startDate, startTime);
+    const endDateTime = combineDateAndTime(endDate, endTime);
+
+    console.log('[checkEventConflicts] Combined datetime ranges:', {
+      startDateTime: startDateTime.toISOString(),
+      endDateTime: endDateTime.toISOString(),
+    });
+
+    // Build query conditions for overlapping events
+    const conditions = [
+      // Case-insensitive location match
+      ilike(events.location, location),
+      // Overlap detection: startDate < new_endDate AND endDate > new_startDate
+      and(
+        lte(events.startDate, endDateTime),
+        gte(events.endDate, startDateTime),
+      ),
+    ];
+
+    // Exclude current event if updating
+    if (excludeEventId) {
+      conditions.push(ne(events.id, excludeEventId));
+    }
+
+    console.log(
+      '[checkEventConflicts] Query conditions:',
+      conditions.length,
+      'conditions',
+    );
+
+    // Query for overlapping events
+    const overlappingEvents = await db
+      .select({
+        id: events.id,
+        title: events.title,
+        startDate: events.startDate,
+        endDate: events.endDate,
+        startTime: events.startTime,
+        endTime: events.endTime,
+        location: events.location,
+      })
+      .from(events)
+      .where(and(...conditions))
+      .execute();
+
+    console.log('[checkEventConflicts] Database query result:', {
+      overlappingEventsCount: overlappingEvents.length,
+      firstEvent: overlappingEvents[0] || 'No overlapping events',
+    });
+
+    // Format conflicts for display
+    const conflicts = overlappingEvents.map((event) => ({
+      id: event.id,
+      title: event.title,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      location: event.location,
+    }));
+
+    const result = {
+      hasConflict: conflicts.length > 0,
+      conflicts,
+      message:
+        conflicts.length > 0
+          ? `Location "${location}" is already booked for ${conflicts.length} conflicting event(s).`
+          : undefined,
+    };
+
+    console.log('[checkEventConflicts] Final result:', {
+      hasConflict: result.hasConflict,
+      conflictsCount: result.conflicts.length,
+      message: result.message,
+    });
+
+    return result;
+  } catch (error) {
+    console.error('Error checking for event conflicts:', error);
+    return {
+      hasConflict: false,
+      conflicts: [],
+      message: 'Unable to check for conflicts at this time.',
+    };
+  }
+}
+
 export async function createEvent(values: z.infer<typeof createEventSchema>) {
   try {
     const validatedFields = createEventSchema.safeParse(values);
 
     if (!validatedFields.success) {
       return {
+        success: false,
         error: 'Invalid fields',
         details: validatedFields.error.flatten().fieldErrors,
       };
@@ -304,29 +440,112 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
     const startDateTime = combineDateAndTime(startDate, startTime);
     const endDateTime = combineDateAndTime(endDate, endTime);
 
-    await db.insert(events).values({
-      title,
-      description,
-      startDate: startDateTime,
-      endDate: endDateTime,
-      startTime,
-      endTime,
-      location,
-      category,
-      color,
-      isRepeating: isRepeating ?? false,
-      repeatingType: repeatingType ?? null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    // Validate that end time is after start time
+    if (endDateTime <= startDateTime) {
+      return {
+        success: false,
+        error: 'Invalid time range',
+        message: 'End time must be after start time.',
+      };
+    }
+
+    // Check for overlapping events at the same location
+    let overlappingEvents: Array<{
+      id: string;
+      title: string;
+      startDate: Date;
+      endDate: Date;
+      startTime: string;
+      endTime: string;
+      location: string;
+    }>;
+    try {
+      overlappingEvents = await db
+        .select({
+          id: events.id,
+          title: events.title,
+          startDate: events.startDate,
+          endDate: events.endDate,
+          startTime: events.startTime,
+          endTime: events.endTime,
+          location: events.location,
+        })
+        .from(events)
+        .where(
+          and(
+            // Case-insensitive location match
+            ilike(events.location, location),
+            // Overlap detection: startDate < new_endDate AND endDate > new_startDate
+            and(
+              lte(events.startDate, endDateTime),
+              gte(events.endDate, startDateTime),
+            ),
+          ),
+        )
+        .execute();
+    } catch (dbError) {
+      console.error('Database conflict check failed:', dbError);
+      return {
+        success: false,
+        error: 'Conflict check failed',
+        message:
+          'Unable to check for conflicts due to a database error. Please try again.',
+      };
+    }
+
+    // If conflicts are found, return detailed error information
+    if (overlappingEvents.length > 0) {
+      const conflictDetails = overlappingEvents.map((event) => ({
+        title: event.title,
+        timeRange: `${event.startTime} - ${event.endTime}`,
+        dateRange: `${event.startDate.toLocaleDateString()} - ${event.endDate.toLocaleDateString()}`,
+        location: event.location,
+      }));
+
+      return {
+        success: false,
+        error: 'Location booking conflict',
+        conflicts: conflictDetails,
+        message: `Cannot create event "${title}" because the location "${location}" is already booked for ${overlappingEvents.length} conflicting event(s). Please choose a different time or location.`,
+        conflictCount: overlappingEvents.length,
+      };
+    }
+
+    // Attempt to create the event
+    try {
+      await db.insert(events).values({
+        title,
+        description,
+        startDate: startDateTime,
+        endDate: endDateTime,
+        startTime,
+        endTime,
+        location,
+        category,
+        color,
+        isRepeating: isRepeating ?? false,
+        repeatingType: repeatingType ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    } catch (dbError) {
+      console.error('Database insertion failed:', dbError);
+      return {
+        success: false,
+        error: 'Database error',
+        message:
+          'Failed to create event due to a database error. Please try again.',
+      };
+    }
 
     revalidatePath('/demo');
     return { success: true };
   } catch (error) {
-    console.error('Error creating event:', error);
+    console.error('Unexpected error creating event:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create event',
+      message: 'An unexpected error occurred while creating the event.',
     };
   }
 }

@@ -1,4 +1,5 @@
 import { Locale } from 'date-fns';
+import { LOCATION_OPTIONS } from '@/lib/validations';
 
 export interface HoverPositionType {
   hour: number;
@@ -16,7 +17,7 @@ export interface Events {
   endTime: string;
   isRepeating: boolean;
   repeatingType: 'daily' | 'weekly' | 'monthly' | null;
-  location: string;
+  location: (typeof LOCATION_OPTIONS)[number];
   category: string;
   color: string;
   createdAt: Date;

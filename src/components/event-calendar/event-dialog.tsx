@@ -27,6 +27,7 @@ const DEFAULT_START_TIME = '09:00';
 const DEFAULT_END_TIME = '10:00';
 const DEFAULT_COLOR = 'bg-red-600';
 const DEFAULT_CATEGORY = 'workshop';
+const DEFAULT_LOCATION = 'Restaurant/Bar';
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
 
@@ -38,7 +39,7 @@ const DEFAULT_FORM_VALUES: EventFormValues = {
   category: DEFAULT_CATEGORY,
   startTime: DEFAULT_START_TIME,
   endTime: DEFAULT_END_TIME,
-  location: '',
+  location: DEFAULT_LOCATION,
   color: DEFAULT_COLOR,
 };
 
@@ -94,7 +95,7 @@ export default function EventDialog() {
           category: selectedEvent.category || DEFAULT_CATEGORY,
           startTime: selectedEvent.startTime || DEFAULT_START_TIME,
           endTime: selectedEvent.endTime || DEFAULT_END_TIME,
-          location: selectedEvent.location || '',
+          location: selectedEvent.location || DEFAULT_LOCATION,
           color: selectedEvent.color,
         });
       } catch (error) {

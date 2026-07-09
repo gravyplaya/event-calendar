@@ -38,7 +38,8 @@ export function EventCalendarDay({ events, currentDate }: CalendarDayProps) {
   >(undefined);
   const timeColumnRef = useRef<HTMLDivElement>(null);
 
-  const now = new Date();
+  // Use static time for demo to prevent hydration issues
+  const now = new Date('2024-12-01T14:30:00');
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
 

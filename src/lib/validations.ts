@@ -4,6 +4,13 @@ import { CalendarViewType } from '@/types/event';
 
 const timeRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
 
+// Define the location options as a const array for reuse
+export const LOCATION_OPTIONS = [
+  'Restaurant/Bar',
+  'Basement Speakeasy',
+  'Both',
+] as const;
+
 const baseEventSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1).max(256),
@@ -12,7 +19,7 @@ const baseEventSchema = z.object({
   endDate: z.date(),
   startTime: z.string().regex(timeRegex),
   endTime: z.string().regex(timeRegex),
-  location: z.string().min(1).max(256),
+  location: z.enum(LOCATION_OPTIONS),
   category: z.string().min(1).max(100),
   color: z.string().min(1).max(25),
   createdAt: z.string().datetime(),
@@ -26,7 +33,7 @@ export const createEventSchema = z.object({
   endDate: z.date(),
   startTime: z.string().regex(timeRegex),
   endTime: z.string().regex(timeRegex),
-  location: z.string().min(1).max(256),
+  location: z.enum(LOCATION_OPTIONS),
   category: z.string().min(1).max(100),
   isRepeating: z.boolean().default(false).optional(),
   repeatingType: z.enum(['daily', 'weekly', 'monthly']).optional(),
@@ -90,6 +97,23 @@ export const searchEventFilterSchema = z.object({
   limit: z.number().default(50),
   offset: z.number().default(0),
 });
+
+// Conflict detection types
+export interface EventConflict {
+  id: string;
+  title: string;
+  startDate: Date;
+  endDate: Date;
+  startTime: string;
+  endTime: string;
+  location: string;
+}
+
+export interface ConflictCheckResult {
+  hasConflict: boolean;
+  conflicts: EventConflict[];
+  message?: string;
+}
 
 export type EventFilter = z.infer<typeof eventFilterSchema>;
 export type SearchEventFilter = z.infer<typeof searchEventFilterSchema>;

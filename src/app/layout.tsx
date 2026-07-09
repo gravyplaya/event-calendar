@@ -13,29 +13,30 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Shadcn Event Calendar',
-    template: '%s | React Event Calendar',
+    default: 'The Nest Restaurant & Bar',
+    template: '%s | The Nest',
   },
   description:
-    'Modern event scheduling and calendar management solution with advanced features',
+    'Events, live music, and special occasions at The Nest Restaurant & Bar in Muskegon',
   keywords: [
-    'React Calendar',
-    'Event Scheduling',
-    'Calendar App',
-    'Open Source Calendar',
-    'Next.js Calendar',
+    'The Nest',
+    'The Nest Muskegon',
+    'Restaurant & Bar',
+    'Event Calendar',
+    'Live Music Muskegon',
+    'Muskegon Events',
   ],
   authors: [
     {
-      name: 'fahrezapratamahidayat',
-      url: 'https://shadcn-event-calendar.vercel.app/',
+      name: 'Tavonni',
+      url: 'https://tavonni.com/',
     },
   ],
   openGraph: {
-    title: 'Shadcn Event Calendar',
-    description: 'Modern event scheduling solution with advanced features',
-    url: 'https://shadcn-event-calendar.vercel.app/',
-    siteName: 'React Event Calendar',
+    title: 'The Nest Restaurant & Bar',
+    description: 'Events, live music, and special occasions in Muskegon',
+    url: 'https://spaces.tavonni.com',
+    siteName: 'The Nest Restaurant & Bar',
     images: [
       {
         url: '/og-image.png',
@@ -48,11 +49,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'React Event Calendar',
-    description: 'Modern event scheduling solution with advanced features',
+    title: 'The Nest Restaurant & Bar',
+    description: 'Events, live music, and special occasions in Muskegon',
     images: ['/twitter-image.png'],
   },
-  metadataBase: new URL('https://shadcn-event-calendar.vercel.app/'),
+  metadataBase: new URL('https://spaces.tavonni.com'),
 };
 
 export default function RootLayout({

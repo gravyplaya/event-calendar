@@ -1,4 +1,5 @@
 import { CATEGORY_OPTIONS, EVENT_COLORS } from '@/constants/calendar-constant';
+import { LOCATION_OPTIONS } from '@/lib/validations';
 import { db } from './index';
 import { events } from './schema';
 import { faker } from '@faker-js/faker';
@@ -64,7 +65,7 @@ export async function seedEvents() {
         repeatingType: isRepeating
           ? faker.helpers.arrayElement(['daily', 'weekly', 'monthly'])
           : null,
-        location: `${faker.location.streetAddress()}, ${faker.location.city()}`,
+        location: faker.helpers.arrayElement(LOCATION_OPTIONS),
         category: category.value,
         color: color.value,
         createdAt: new Date(),

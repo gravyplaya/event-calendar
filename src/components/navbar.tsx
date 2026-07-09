@@ -1,5 +1,5 @@
 'use client';
-import { Calendar, Github } from 'lucide-react';
+import { Calendar, Github, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { ModeToggle } from './mode-toggel';
@@ -14,13 +14,13 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           <Calendar className="text-primary h-5 w-5" />
           <span className="font-inter text-xl font-semibold tracking-tight">
-            React Event Calendar
+            The Nest
           </span>
         </div>
         <nav className="hidden md:flex md:items-center md:gap-6">
-          {docsConfig.mainNav.map((item, index) => (
+          {docsConfig.mainNav.map((item) => (
             <Link
-              key={index}
+              key={item.href}
               href={item.href}
               className={`${pathname === item.href ? 'text-primary' : ''} hover:text-primary text-sm font-medium transition-colors`}
             >
@@ -29,17 +29,12 @@ export default function Navbar() {
           ))}
         </nav>
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" asChild>
-            <a
-              href="https://github.com/fahrezapratamahidayat/react-event-calendar"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2"
-            >
-              <Github size={16} />
-              <span className="hidden sm:inline">Star on GitHub</span>
-            </a>
-          </Button>
+          <Link href="/admin/login">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <Lock className="h-4 w-4" />
+              Admin
+            </Button>
+          </Link>
           <ModeToggle />
         </div>
       </div>

@@ -1,11 +1,9 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEventCalendarStore } from '@/hooks/use-event';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import {
@@ -25,9 +23,12 @@ import { useShallow } from 'zustand/shallow';
 import { toast } from 'sonner';
 import { createEvent } from '@/app/actions';
 import { getLocaleFromCode } from '@/lib/event';
+import { FormFooter } from './ui/form-footer';
+import { useConflictDetection } from '@/hooks/use-conflict-detection';
 
 type EventFormValues = z.infer<typeof createEventSchema>;
 
+// Update the DEFAULT_FORM_VALUES to use a valid location from the enum
 const DEFAULT_FORM_VALUES: EventFormValues = {
   title: '',
   description: '',
@@ -36,7 +37,7 @@ const DEFAULT_FORM_VALUES: EventFormValues = {
   category: EVENT_DEFAULTS.CATEGORY,
   startTime: EVENT_DEFAULTS.START_TIME,
   endTime: EVENT_DEFAULTS.END_TIME,
-  location: '',
+  location: 'Restaurant/Bar', // Use the first valid location option as default
   color: EVENT_DEFAULTS.COLOR,
   isRepeating: false,
 };
@@ -63,36 +64,185 @@ export default function EventCreateDialog() {
     mode: 'onChange',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [allowForceSave] = useState(false); // Set to true for authorized users
   const localeObj = getLocaleFromCode(locale);
 
   const watchedValues = form.watch();
 
+  // Create event data for conflict detection
+  const eventData = useMemo(() => {
+    if (
+      watchedValues.startDate &&
+      watchedValues.endDate &&
+      watchedValues.startTime &&
+      watchedValues.endTime &&
+      watchedValues.location
+    ) {
+      return {
+        title: watchedValues.title || 'Untitled Event',
+        description: watchedValues.description || '',
+        startDate: watchedValues.startDate,
+        endDate: watchedValues.endDate,
+        startTime: watchedValues.startTime,
+        endTime: watchedValues.endTime,
+        location: watchedValues.location,
+        category: watchedValues.category || 'General',
+        color: watchedValues.color || 'blue',
+        isRepeating: watchedValues.isRepeating || false,
+        repeatingType: watchedValues.repeatingType,
+      };
+    }
+    return null;
+  }, [
+    watchedValues.startDate,
+    watchedValues.endDate,
+    watchedValues.startTime,
+    watchedValues.endTime,
+    watchedValues.location,
+    watchedValues.title,
+    watchedValues.description,
+    watchedValues.category,
+    watchedValues.color,
+    watchedValues.isRepeating,
+    watchedValues.repeatingType,
+  ]);
+
+  // Use on-demand conflict detection
+  const {
+    hasConflict,
+    conflicts,
+    message: conflictMessage,
+    isChecking: isCheckingConflicts,
+    error: conflictError,
+    checkConflicts,
+    clearConflicts,
+  } = useConflictDetection(eventData, {
+    enabled: false, // Disable automatic checking
+    delay: 0,
+  });
+
   const handleSubmit = async (formValues: EventFormValues) => {
+    // First, check for conflicts using the current form data
+    await checkConflicts();
+
+    // Small delay to allow state updates
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // If conflicts are detected, show warning and block save
+    if (hasConflict && conflicts.length > 0) {
+      toast.error('Cannot save event', {
+        description:
+          'Conflicts detected. Please review and resolve conflicts before saving.',
+        duration: 5000,
+      });
+      return;
+    }
+
+    // Check if there was an error checking conflicts
+    if (conflictError) {
+      toast.error('Conflict check failed', {
+        description: `${conflictError}. Please try again or check your connection.`,
+        duration: 5000,
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
-    toast.promise(createEvent(formValues), {
-      loading: 'Creating Event...',
-      success: (result) => {
-        if (!result.success) {
-          throw new Error(result.error || 'Error Creating Event');
+    try {
+      const result = await createEvent(formValues);
+
+      if (!result.success) {
+        // Handle conflict detection errors with detailed information
+        if (result.conflicts && result.conflicts.length > 0) {
+          const conflictMessages = result.conflicts
+            .map((conflict) => `• "${conflict.title}" (${conflict.timeRange})`)
+            .join('\n');
+
+          toast.error(`Location Booking Conflict`, {
+            description: `${result.message}\n\nConflicting events:\n${conflictMessages}`,
+            duration: 10000,
+          });
+        } else {
+          // Handle other errors
+          toast.error(result.error || 'Error Creating Event');
         }
-        form.reset(DEFAULT_FORM_VALUES);
         setIsSubmitting(false);
-        closeQuickAddDialog();
-        return 'Event Succesfully created';
-      },
-      error: (error) => {
-        console.error('Error:', error);
-        if (error instanceof Error) {
-          return error.message;
-        } else if (typeof error === 'string') {
-          return error;
-        } else if (error && typeof error === 'object' && 'message' in error) {
-          return String(error.message);
-        }
-        return 'Ops! something went wrong';
-      },
-    });
+        return;
+      }
+
+      // Success case
+      toast.success('Event Successfully Created');
+      form.reset(DEFAULT_FORM_VALUES);
+      clearConflicts(); // Clear any existing conflicts
+      setIsSubmitting(false);
+      closeQuickAddDialog();
+    } catch (error) {
+      console.error('Error:', error);
+      let errorMessage = 'Ops! something went wrong';
+
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = String(error.message);
+      }
+
+      toast.error(errorMessage);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleForceSave = async () => {
+    // For authorized users who want to force save despite conflicts
+    if (!allowForceSave) {
+      toast.error('Force save not available', {
+        description:
+          'You do not have permission to force save events with conflicts.',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // This would require a separate API endpoint that allows force saving
+      // For now, we'll just show a message
+      toast.info('Force save functionality', {
+        description:
+          'Force save would bypass conflict checks for authorized users.',
+      });
+    } catch (error) {
+      console.error('Force save error:', error);
+      toast.error('Force save failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    form.reset(DEFAULT_FORM_VALUES);
+    clearConflicts(); // Clear conflicts when canceling
+    closeQuickAddDialog();
+  };
+
+  // Handle viewing conflict in calendar
+  const handleViewInCalendar = (conflictId: string) => {
+    // This would typically navigate to calendar or open calendar modal
+    console.log('View conflict in calendar:', conflictId);
+    // You could emit an event or call a navigation function here
+  };
+
+  // Handle suggesting alternatives
+  const handleSuggestAlternatives = () => {
+    // This could open a modal with alternative time/location suggestions
+    console.log('Suggest alternatives for conflicts');
+    // You could implement a suggestions system here
+  };
+
+  // Handle dismissing conflicts
+  const handleDismissConflict = () => {
+    clearConflicts();
   };
 
   useEffect(() => {
@@ -131,6 +281,15 @@ export default function EventCreateDialog() {
                 form={form}
                 onSubmit={handleSubmit}
                 locale={localeObj}
+                conflicts={conflicts}
+                conflictMessage={conflictMessage}
+                isCheckingConflicts={isCheckingConflicts}
+                conflictError={conflictError}
+                onViewInCalendar={handleViewInCalendar}
+                onSuggestAlternatives={handleSuggestAlternatives}
+                onDismissConflict={handleDismissConflict}
+                allowForceSave={allowForceSave}
+                onForceSave={handleForceSave}
               />
             </ScrollArea>
           </TabsContent>
@@ -145,14 +304,16 @@ export default function EventCreateDialog() {
           </TabsContent>
         </Tabs>
         <DialogFooter className="mt-2">
-          <Button
-            onClick={form.handleSubmit(handleSubmit)}
-            className="cursor-pointer"
-            disabled={isSubmitting}
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {isSubmitting ? 'Saving' : 'Save'}
-          </Button>
+          <FormFooter
+            onCancel={handleCancel}
+            onSave={form.handleSubmit(handleSubmit)}
+            isSubmitting={isSubmitting}
+            hasConflict={hasConflict}
+            conflictMessage={conflictMessage}
+            isCheckingConflicts={isCheckingConflicts}
+            allowForceSave={allowForceSave}
+            onForceSave={handleForceSave}
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>

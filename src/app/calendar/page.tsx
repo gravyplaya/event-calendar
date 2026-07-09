@@ -14,6 +14,9 @@ interface DemoPageProps {
 export default async function DemoPage(props: DemoPageProps) {
   const searchParams = await props.searchParams;
   const search = searchParamsCache.parse(searchParams);
+
+  console.log('📋 [DemoPage] Search params:', search);
+
   const eventsResponse = await getEvents({
     date: search.date,
     view: search.view as CalendarViewType,
@@ -26,13 +29,27 @@ export default async function DemoPage(props: DemoPageProps) {
     repeatingTypes: search.repeatingTypes,
   });
 
+  console.log('📊 [DemoPage] Events response:', {
+    success: eventsResponse.success,
+    eventCount: eventsResponse.events.length,
+    firstEvent: eventsResponse.events[0]
+      ? {
+          id: eventsResponse.events[0].id,
+          title: eventsResponse.events[0].title,
+          startDate: eventsResponse.events[0].startDate,
+          endDate: eventsResponse.events[0].endDate,
+        }
+      : 'No events',
+    error: eventsResponse.error,
+  });
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl font-semibold tracking-tight">
-              Live Demo
+              The Nest
             </span>
           </div>
           <ModeToggle />
@@ -41,10 +58,9 @@ export default async function DemoPage(props: DemoPageProps) {
       <main className="flex-1 py-6">
         <div className="container">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold">React Event Calendar Demo</h1>
+            <h1 className="text-2xl font-bold">Event Calendar</h1>
             <p className="text-muted-foreground mt-2">
-              Try out all features of the calendar component in this interactive
-              demo.
+              Check out all our scheduled events.
             </p>
           </div>
           <div className="bg-card overflow-hidden rounded-xl border shadow-sm">
@@ -71,12 +87,12 @@ export default async function DemoPage(props: DemoPageProps) {
       <footer className="border-t py-4">
         <div className="container">
           <p className="text-muted-foreground text-center text-sm">
-            Want to use this calendar in your project?{' '}
+            Want to contact us directly?{' '}
             <Link
-              href="/docs"
+              href="mailto:spaces@tavonni.com"
               className="text-primary font-medium hover:underline"
             >
-              Check out the documentation
+              Send us an email. spaces@tavonni.com
             </Link>
             .
           </p>

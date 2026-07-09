@@ -20,7 +20,10 @@ export const events = pgTable('events', {
     length: 10,
     enum: ['daily', 'weekly', 'monthly'],
   }).$type<'daily' | 'weekly' | 'monthly'>(),
-  location: varchar('location', { length: 256 }).notNull(),
+  location: varchar('location', {
+    length: 256,
+    enum: ['Restaurant/Bar', 'Basement Speakeasy', 'Both'],
+  }).notNull(),
   category: varchar('category', { length: 100 }).notNull(),
   color: varchar('color', { length: 15 }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true })

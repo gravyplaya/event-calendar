@@ -28,12 +28,12 @@ export const docsConfig: DocsConfig = {
       href: '/',
     },
     {
-      title: 'Documentation',
-      href: '/docs',
+      title: 'Calendar',
+      href: '/calendar',
     },
     {
-      title: 'Demo',
-      href: '/demo',
+      title: 'Menu',
+      href: '/menu',
     },
   ],
   sidebarNav: [
@@ -42,9 +42,9 @@ export const docsConfig: DocsConfig = {
       items: [
         {
           href: '/docs',
-          title: 'React Event Calendar',
+          title: 'The Nest Restaurant & Bar',
           description:
-            'Modern event calendar built with React, Next.js and Tailwind CSS',
+            'Event calendar for The Nest Restaurant & Bar in Muskegon',
         },
         {
           href: '/docs/installation',

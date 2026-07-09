@@ -54,8 +54,6 @@ const tabsConfig: TabConfig[] = [
 const daysOptions = [3, 5, 7, 10, 14, 31];
 
 const transition = {
-  type: 'tween',
-  ease: 'easeOut',
   duration: 0.15,
 };
 
@@ -222,7 +220,7 @@ export function EventCalendarTabs({
                         storeDaysCount === option && 'bg-muted font-medium',
                       )}
                     >
-                      {option} hari
+                      {option} days
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -338,7 +336,7 @@ export function EventCalendarTabs({
                         storeDaysCount === option && 'bg-muted font-medium',
                       )}
                     >
-                      {option} hari
+                      {option} days
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>

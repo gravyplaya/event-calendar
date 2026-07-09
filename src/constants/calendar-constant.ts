@@ -23,9 +23,12 @@ export const EVENT_COLORS = [
 
 export const CATEGORY_OPTIONS = [
   { value: 'workshop', label: 'Workshop' },
-  { value: 'conference', label: 'Konferensi' },
+  { value: 'conference', label: 'Conference' },
   { value: 'seminar', label: 'Seminar' },
-  { value: 'social', label: 'Sosial' },
+  { value: 'social', label: 'Social' },
+  { value: 'wedding', label: 'Wedding' },
+  { value: 'dance', label: 'Dancing' },
+  { value: 'other', label: 'Other' },
 ] as const;
 
 export const demoEvents = [
@@ -39,8 +42,8 @@ export const demoEvents = [
     endTime: '11:30',
     isRepeating: true,
     repeatingType: 'weekly',
-    location: 'Zoom',
-    category: 'Work',
+    location: 'Restaurant/Bar',
+    category: 'workshop',
     color: 'blue',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -55,8 +58,8 @@ export const demoEvents = [
     endTime: '15:00',
     isRepeating: false,
     repeatingType: null,
-    location: 'Meeting Room A',
-    category: 'Product',
+    location: 'Basement Speakeasy',
+    category: 'conference',
     color: 'green',
     createdAt: new Date(),
     updatedAt: new Date(),
