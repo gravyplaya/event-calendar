@@ -1,8 +1,6 @@
 'use client';
 import Image from 'next/image';
-import { Lock } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from './ui/button';
 import { ModeToggle } from './mode-toggel';
 import { usePathname } from 'next/navigation';
 import { docsConfig } from '@/configs/docs';
@@ -37,10 +35,10 @@ export default function Navbar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`text-sm font-medium transition-colors ${
+              className={`text-base font-semibold transition-colors ${
                 pathname === item.href
                   ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-foreground/80 hover:text-foreground'
               }`}
             >
               {item.title}
@@ -48,12 +46,6 @@ export default function Navbar() {
           ))}
         </nav>
         <div className="flex items-center gap-3">
-          <Link href="/admin/login">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Lock className="h-4 w-4" />
-              Admin
-            </Button>
-          </Link>
           <ModeToggle />
         </div>
       </div>
