@@ -22,10 +22,17 @@ export default async function AdminPage(props: AdminPageProps) {
   const searchParams = await props.searchParams;
   const search = searchParamsCache.parse(searchParams);
 
-  console.log('📋 [AdminPage] Search params:', search);
+  // Ensure the date defaults to today when not specified in the URL
+  const today = new Date();
+  const effectiveDate = search.date ?? today;
+
+  console.log('📋 [AdminPage] Search params:', {
+    ...search,
+    date: effectiveDate,
+  });
 
   const eventsResponse = await getEvents({
-    date: search.date,
+    date: effectiveDate,
     view: search.view as CalendarViewType,
     daysCount: Number(search.daysCount),
     categories: search.categories,
@@ -100,7 +107,7 @@ export default async function AdminPage(props: AdminPageProps) {
             >
               <AdminEventCalendar
                 events={eventsResponse.events}
-                initialDate={search.date}
+                initialDate={effectiveDate}
               />
             </Suspense>
           </div>
@@ -109,7 +116,7 @@ export default async function AdminPage(props: AdminPageProps) {
       <footer className="border-t py-4">
         <div className="container">
           <p className="text-muted-foreground text-center text-sm">
-            Admin panel for The Nest Restaurant & Bar event management
+            Admin panel for The Nest Restaurant and Nightclub event management
           </p>
         </div>
       </footer>

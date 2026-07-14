@@ -42,9 +42,9 @@ export const docsConfig: DocsConfig = {
       items: [
         {
           href: '/docs',
-          title: 'The Nest Restaurant & Bar',
+          title: 'The Nest Restaurant and Nightclub',
           description:
-            'Event calendar for The Nest Restaurant & Bar in Muskegon',
+            'Event calendar for The Nest Restaurant and Nightclub in Muskegon',
         },
         {
           href: '/docs/installation',

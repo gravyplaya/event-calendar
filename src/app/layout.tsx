@@ -13,11 +13,11 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: 'The Nest Restaurant & Bar',
+    default: 'The Nest Restaurant and Nightclub',
     template: '%s | The Nest',
   },
   description:
-    'Events, live music, and special occasions at The Nest Restaurant & Bar in Muskegon',
+    'Events, live music, and special occasions at The Nest Restaurant and Nightclub in Muskegon',
   keywords: [
     'The Nest',
     'The Nest Muskegon',
@@ -33,10 +33,10 @@ export const metadata: Metadata = {
     },
   ],
   openGraph: {
-    title: 'The Nest Restaurant & Bar',
+    title: 'The Nest Restaurant and Nightclub',
     description: 'Events, live music, and special occasions in Muskegon',
     url: 'https://spaces.tavonni.com',
-    siteName: 'The Nest Restaurant & Bar',
+    siteName: 'The Nest Restaurant and Nightclub',
     images: [
       {
         url: '/og-image.png',
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'The Nest Restaurant & Bar',
+    title: 'The Nest Restaurant and Nightclub',
     description: 'Events, live music, and special occasions in Muskegon',
     images: ['/twitter-image.png'],
   },
@@ -67,8 +67,8 @@ export default function RootLayout({
       <body className={` ${jakarta.variable} font-jakarta antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <Toaster expand={true} richColors position="top-center" />

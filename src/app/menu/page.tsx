@@ -5,7 +5,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Menu',
-  description: 'Food and drinks at The Nest Restaurant & Bar in Muskegon',
+  description: 'Food and drinks at The Nest Restaurant and Nightclub in Muskegon',
 };
 
 export default function MenuPage() {
@@ -48,7 +48,7 @@ export default function MenuPage() {
               </p>
               <div className="text-muted-foreground mt-4 flex items-center justify-center gap-2 text-sm">
                 <MapPin className="h-4 w-4" />
-                333 W. Western Ave, Muskegon, MI 49440
+                333 W. Western Ave, Suite B, Muskegon, MI 49440
               </div>
             </div>
 
@@ -97,7 +97,7 @@ export default function MenuPage() {
       <footer className="border-t py-8">
         <div className="container text-center">
           <p className="text-muted-foreground text-sm">
-            &copy; 2025 The Nest Restaurant &amp; Bar. All rights reserved.
+            &copy; 2025 The Nest Restaurant and Nightclub. All rights reserved.
           </p>
         </div>
       </footer>

@@ -1,5 +1,6 @@
 'use client';
-import { Calendar, Github, Lock } from 'lucide-react';
+import Image from 'next/image';
+import { Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { ModeToggle } from './mode-toggel';
@@ -9,26 +10,46 @@ import { docsConfig } from '@/configs/docs';
 export default function Navbar() {
   const pathname = usePathname();
   return (
-    <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
+    <header className="bg-background/70 sticky top-0 z-50 border-b border-white/5 backdrop-blur-xl">
+      {/* Rainbow accent line at the very top */}
+      <div
+        className="absolute inset-x-0 top-0 h-[2px]"
+        style={{
+          background:
+            'linear-gradient(90deg, #E40303, #FF8C00, #FFED00, #008026, #004DFF, #732982)',
+          opacity: 0.6,
+        }}
+      />
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Calendar className="text-primary h-5 w-5" />
-          <span className="font-inter text-xl font-semibold tracking-tight">
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/the-nest-logo-transparent.png"
+            alt="The Nest Muskegon"
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-full"
+            priority
+          />
+          <span className="text-xl font-semibold tracking-tight">
             The Nest
           </span>
-        </div>
+        </Link>
         <nav className="hidden md:flex md:items-center md:gap-6">
           {docsConfig.mainNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`${pathname === item.href ? 'text-primary' : ''} hover:text-primary text-sm font-medium transition-colors`}
+              className={`text-sm font-medium transition-colors ${
+                pathname === item.href
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               {item.title}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link href="/admin/login">
             <Button variant="ghost" size="sm" className="gap-2">
               <Lock className="h-4 w-4" />
