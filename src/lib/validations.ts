@@ -120,3 +120,41 @@ export type SearchEventFilter = z.infer<typeof searchEventFilterSchema>;
 
 export type CreateTaskSchema = z.infer<typeof createEventSchema>;
 export type UpdateTaskSchema = z.infer<typeof UpdateEventSchema>;
+
+// ── Loyalty Program Schemas ────────────────────────────────────────────
+
+export const subscribeSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  firstName: z.string().min(1, 'First name is required').max(100),
+  lastName: z.string().min(1, 'Last name is required').max(100),
+  phone: z.string().max(20).optional(),
+  smsOptIn: z.boolean(),
+});
+
+export type SubscribeInput = z.infer<typeof subscribeSchema>;
+
+export const checkInSchema = z
+  .object({
+    code: z.string().uuid('Invalid check-in code'),
+    email: z.string().email().optional(),
+    phone: z.string().max(20).optional(),
+    firstName: z.string().min(1).max(100).optional(),
+    lastName: z.string().min(1).max(100).optional(),
+    smsOptIn: z.boolean().default(false),
+  })
+  .refine((data) => data.email || data.phone, {
+    message: 'Either email or phone is required',
+    path: ['email'],
+  });
+
+export type CheckInInput = z.infer<typeof checkInSchema>;
+
+export const adjustLoyaltyPointsSchema = z.object({
+  subscriberId: z.string().uuid(),
+  points: z.number().int(),
+  reason: z.string().min(1).max(256),
+});
+
+export type AdjustLoyaltyPointsInput = z.infer<
+  typeof adjustLoyaltyPointsSchema
+>;

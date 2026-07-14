@@ -10,6 +10,7 @@ import {
   FAQSection,
   LandingFooter,
 } from '@/components/landing/landing-sections';
+import { LoyaltySignup } from '@/components/landing/loyalty-signup';
 
 export default async function IndexPage() {
   const today = new Date();
@@ -46,6 +47,7 @@ export default async function IndexPage() {
         <TwoFloorsSection />
         <WhatToExpectSection />
         <FindUsSection />
+        <LoyaltySignup />
         <FAQSection />
       </main>
       <LandingFooter />
