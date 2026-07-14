@@ -473,7 +473,7 @@ export default function SubscribersDashboard() {
         {/* Transaction history drawer/modal */}
         {selectedSub && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4"
             onClick={() => setSelectedSub(null)}
             onKeyDown={(e) => {
               if (e.key === 'Escape') setSelectedSub(null);
