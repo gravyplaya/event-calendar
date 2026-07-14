@@ -5,7 +5,6 @@ import { searchParamsCache } from '@/lib/searchParams';
 import { CalendarViewType } from '@/types/event';
 import { Suspense } from 'react';
 import { ModeToggle } from '@/components/mode-toggel';
-import Link from 'next/link';
 
 interface DemoPageProps {
   searchParams: Promise<SearchParams>;
@@ -87,14 +86,7 @@ export default async function DemoPage(props: DemoPageProps) {
       <footer className="border-t py-4">
         <div className="container">
           <p className="text-muted-foreground text-center text-sm">
-            Want to contact us directly?{' '}
-            <Link
-              href="mailto:spaces@tavonni.com"
-              className="text-primary font-medium hover:underline"
-            >
-              Send us an email. spaces@tavonni.com
-            </Link>
-            .
+            Want to contact us directly? Call Us (231) 747-8114
           </p>
         </div>
       </footer>

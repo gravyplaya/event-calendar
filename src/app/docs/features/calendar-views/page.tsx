@@ -6,54 +6,52 @@ import { demoEvents } from '@/constants/calendar-constant';
 import { DocsHeader } from '@/components/docs/docs-header';
 import { docsConfig } from '@/configs/docs';
 
+const CalendarDay = dynamic(
+  () =>
+    import('@/components/event-calendar/event-calendar-day').then((mod) => ({
+      default: mod.EventCalendarDay,
+    })),
+  {
+    ssr: true,
+    loading: () => (
+      <div className="bg-muted/30 h-ful flex w-full items-center justify-center rounded-lg">
+        <Calendar className="h-8 w-8 animate-pulse opacity-50" />
+      </div>
+    ),
+  },
+);
+
+const CalendarWeek = dynamic(
+  () =>
+    import('@/components/event-calendar/event-calendar-week').then((mod) => ({
+      default: mod.EventCalendarWeek,
+    })),
+  {
+    ssr: true,
+    loading: () => (
+      <div className="bg-muted/30 h-ful flex w-full items-center justify-center rounded-lg">
+        <Calendar className="h-8 w-8 animate-pulse opacity-50" />
+      </div>
+    ),
+  },
+);
+
+const CalendarMonth = dynamic(
+  () =>
+    import('@/components/event-calendar/event-calendar-month').then((mod) => ({
+      default: mod.EventCalendarMonth,
+    })),
+  {
+    ssr: true,
+    loading: () => (
+      <div className="bg-muted/30 h-ful flex w-full items-center justify-center rounded-lg">
+        <Calendar className="h-8 w-8 animate-pulse opacity-50" />
+      </div>
+    ),
+  },
+);
+
 export default function CalendarViewsDocPage() {
-  const CalendarDay = dynamic(
-    () =>
-      import('@/components/event-calendar/event-calendar-day').then((mod) => ({
-        default: mod.EventCalendarDay,
-      })),
-    {
-      ssr: true,
-      loading: () => (
-        <div className="bg-muted/30 h-ful flex w-full items-center justify-center rounded-lg">
-          <Calendar className="h-8 w-8 animate-pulse opacity-50" />
-        </div>
-      ),
-    },
-  );
-
-  const CalendarWeek = dynamic(
-    () =>
-      import('@/components/event-calendar/event-calendar-week').then((mod) => ({
-        default: mod.EventCalendarWeek,
-      })),
-    {
-      ssr: true,
-      loading: () => (
-        <div className="bg-muted/30 h-ful flex w-full items-center justify-center rounded-lg">
-          <Calendar className="h-8 w-8 animate-pulse opacity-50" />
-        </div>
-      ),
-    },
-  );
-
-  const CalendarMonth = dynamic(
-    () =>
-      import('@/components/event-calendar/event-calendar-month').then(
-        (mod) => ({
-          default: mod.EventCalendarMonth,
-        }),
-      ),
-    {
-      ssr: true,
-      loading: () => (
-        <div className="bg-muted/30 h-ful flex w-full items-center justify-center rounded-lg">
-          <Calendar className="h-8 w-8 animate-pulse opacity-50" />
-        </div>
-      ),
-    },
-  );
-
   return (
     <div className="space-y-16">
       <DocsHeader
