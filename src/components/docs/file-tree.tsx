@@ -255,6 +255,7 @@ const FileTree: React.FC<FileTreeProps> = ({
 
   const parsedTree = useMemo(() => {
     return getTree(tree);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tree, autoSlash]);
 
   return (

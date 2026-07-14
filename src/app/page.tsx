@@ -1,5 +1,5 @@
 import { getEvents } from '@/app/actions';
-import { CalendarViewType, type Events } from '@/types/event';
+import { CalendarViewType } from '@/types/event';
 import { startOfDay, endOfDay } from 'date-fns';
 import Navbar from '@/components/navbar';
 import { HeroSection } from '@/components/landing/hero-section';

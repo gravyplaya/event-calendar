@@ -5,9 +5,8 @@ import { searchParamsCache } from '@/lib/searchParams';
 import { CalendarViewType } from '@/types/event';
 import { Suspense } from 'react';
 import { ModeToggle } from '@/components/mode-toggel';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { destroyAdminSession, requireAdminAuth } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 

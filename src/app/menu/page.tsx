@@ -5,7 +5,8 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Menu',
-  description: 'Food and drinks at The Nest Restaurant and Nightclub in Muskegon',
+  description:
+    'Food and drinks at The Nest Restaurant and Nightclub in Muskegon',
 };
 
 export default function MenuPage() {

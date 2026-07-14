@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  useEffect,
-  useState,
-  type ComponentType,
-} from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import { motion } from 'framer-motion';
 
 /**
@@ -97,8 +93,9 @@ function SceneLoading() {
 
 export function HeroScene() {
   const { shouldRender, mounted } = useShouldRender3D();
-  const [CanvasComponent, setCanvasComponent] =
-    useState<ComponentType | null>(null);
+  const [CanvasComponent, setCanvasComponent] = useState<ComponentType | null>(
+    null,
+  );
 
   // Dynamically load the Three.js canvas component after mount
   useEffect(() => {

@@ -342,8 +342,12 @@ export function FindUsSection() {
                 <div className="flex items-start gap-3">
                   <MapPin className="text-primary mt-1 h-5 w-5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">The Nest Restaurant and Nightclub</p>
-                    <p className="text-muted-foreground">333 W. Western Ave. Suite B</p>
+                    <p className="font-medium">
+                      The Nest Restaurant and Nightclub
+                    </p>
+                    <p className="text-muted-foreground">
+                      333 W. Western Ave. Suite B
+                    </p>
                     <p className="text-muted-foreground">Muskegon, MI 49440</p>
                   </div>
                 </div>
@@ -351,7 +355,7 @@ export function FindUsSection() {
                   <Phone className="text-primary mt-1 h-5 w-5 flex-shrink-0" />
                   <a
                     href="tel:+12317478114"
-                    className="text-muted-foreground transition-colors hover:text-primary"
+                    className="text-muted-foreground hover:text-primary transition-colors"
                   >
                     (231) 747-8114
                   </a>

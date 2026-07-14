@@ -110,7 +110,7 @@ const ConflictWarning = memo(
     };
 
     // Handle keyboard navigation for the entire warning
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const _handleKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Escape' && onDismiss) {
         onDismiss();
       }
@@ -430,7 +430,7 @@ export const EventDetailsForm = memo(
     onSuggestAlternatives,
     onDismissConflict,
   }: EventDetailsFormProps) => {
-    const getConflictSeverity = () => {
+    const _getConflictSeverity = () => {
       if (conflicts.length >= 3) return 'high';
       if (conflicts.length >= 2) return 'medium';
       return 'low';

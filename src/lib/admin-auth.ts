@@ -50,7 +50,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     }
 
     return session;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

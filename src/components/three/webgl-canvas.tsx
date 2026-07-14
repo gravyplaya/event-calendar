@@ -73,12 +73,7 @@ export function WebGLCanvas() {
       const tubeRadius = 0.08 + (index % 2) * 0.015;
       const ringRadius = 1.5 - index * 0.06;
 
-      const geometry = new THREE.TorusGeometry(
-        ringRadius,
-        tubeRadius,
-        16,
-        80,
-      );
+      const geometry = new THREE.TorusGeometry(ringRadius, tubeRadius, 16, 80);
       const material = new THREE.MeshStandardMaterial({
         color: color,
         roughness: 0.25,

@@ -30,9 +30,7 @@ export default function Navbar() {
             className="h-9 w-9 rounded-full"
             priority
           />
-          <span className="text-xl font-semibold tracking-tight">
-            The Nest
-          </span>
+          <span className="text-xl font-semibold tracking-tight">The Nest</span>
         </Link>
         <nav className="hidden md:flex md:items-center md:gap-6">
           {docsConfig.mainNav.map((item) => (

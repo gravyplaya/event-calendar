@@ -122,9 +122,9 @@ export function HeroSection({
               className="mt-4 max-w-prose text-base text-white/70"
             >
               An urban, all-inclusive gathering place in the heart of downtown
-              Muskegon. Good food, cold drinks, live entertainment and a room that feels like home
-              — whether you&apos;re here for dinner, a night out, or something
-              happening downstairs.
+              Muskegon. Good food, cold drinks, live entertainment and a room
+              that feels like home — whether you&apos;re here for dinner, a
+              night out, or something happening downstairs.
             </motion.p>
 
             <motion.div
