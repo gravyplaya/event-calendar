@@ -7,7 +7,7 @@ import {
   eventCheckInCodes,
   events,
 } from '@/db/schema';
-import { eq, ilike, and, desc, sql, or } from 'drizzle-orm';
+import { eq, ilike, and, desc, sql, or, gte } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAdminAuth } from '@/lib/admin-auth';
 import {
@@ -564,6 +564,33 @@ export async function deactivateCheckInCode(codeId: string) {
   } catch (error) {
     console.error('[deactivateCheckInCode] Error:', error);
     return { success: false, error: 'Failed to deactivate code' };
+  }
+}
+
+// ── Admin: Get events for check-in QR code dropdown ────────────────────
+
+export async function getEventsForCheckIn() {
+  await requireAdminAuth();
+
+  try {
+    const now = new Date();
+    const result = await db
+      .select({
+        id: events.id,
+        title: events.title,
+        startDate: events.startDate,
+        location: events.location,
+      })
+      .from(events)
+      .where(gte(events.startDate, now))
+      .orderBy(events.startDate)
+      .limit(100)
+      .execute();
+
+    return { events: result, success: true };
+  } catch (error) {
+    console.error('[getEventsForCheckIn] Error:', error);
+    return { events: [], success: false };
   }
 }
 

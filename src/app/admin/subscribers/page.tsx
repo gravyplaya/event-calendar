@@ -23,7 +23,15 @@ import {
   generateEventCheckInCode,
   getActiveCheckInCodes,
   deactivateCheckInCode,
+  getEventsForCheckIn,
 } from '@/app/subscriber-actions';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface SubscriberRow {
   id: string;
@@ -59,6 +67,13 @@ interface TransactionRow {
   eventTitle: string | null;
 }
 
+interface EventRow {
+  id: string;
+  title: string;
+  startDate: Date;
+  location: string;
+}
+
 type Tab = 'subscribers' | 'checkin';
 
 export default function SubscribersDashboard() {
@@ -71,7 +86,8 @@ export default function SubscribersDashboard() {
   const [pointsInput, setPointsInput] = useState('');
   const [reasonInput, setReasonInput] = useState('');
   const [checkInCodes, setCheckInCodes] = useState<CheckInCodeRow[]>([]);
-  const [eventUrlInput, setEventUrlInput] = useState('');
+  const [availableEvents, setAvailableEvents] = useState<EventRow[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState('');
   const [qrDataUrls, setQrDataUrls] = useState<Record<string, string>>({});
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
@@ -86,9 +102,15 @@ export default function SubscribersDashboard() {
 
   const loadCheckInCodes = useCallback(async () => {
     setLoading(true);
-    const result = await getActiveCheckInCodes();
-    if (result.success) {
-      const codes = result.codes as CheckInCodeRow[];
+    const [codesResult, eventsResult] = await Promise.all([
+      getActiveCheckInCodes(),
+      getEventsForCheckIn(),
+    ]);
+    if (eventsResult.success) {
+      setAvailableEvents(eventsResult.events as EventRow[]);
+    }
+    if (codesResult.success) {
+      const codes = codesResult.codes as CheckInCodeRow[];
       setCheckInCodes(codes);
       // Generate QR codes
       const qrUrls: Record<string, string> = {};
@@ -153,16 +175,14 @@ export default function SubscribersDashboard() {
   };
 
   const handleGenerateCode = async () => {
-    // Extract event ID from URL or use directly
-    const eventId = eventUrlInput.trim();
-    if (!eventId) {
-      toast.error('Please enter an event ID');
+    if (!selectedEventId) {
+      toast.error('Please select an event');
       return;
     }
-    const result = await generateEventCheckInCode(eventId);
+    const result = await generateEventCheckInCode(selectedEventId);
     if (result.success) {
       toast.success('Check-in QR code generated!');
-      setEventUrlInput('');
+      setSelectedEventId('');
       await loadCheckInCodes();
     } else {
       toast.error(result.error || 'Failed to generate code');
@@ -341,16 +361,33 @@ export default function SubscribersDashboard() {
                 Generate Event Check-in QR Code
               </h3>
               <p className="text-muted-foreground mb-4 text-sm">
-                Enter the event ID to generate a QR code. Attendees scan it at
-                the door to check in and earn loyalty points.
+                Select an upcoming event to generate a QR code. Attendees scan
+                it at the door to check in and earn loyalty points.
               </p>
               <div className="flex gap-2">
-                <Input
-                  placeholder="Event ID (UUID)"
-                  value={eventUrlInput}
-                  onChange={(e) => setEventUrlInput(e.target.value)}
-                  className="flex-1"
-                />
+                <Select
+                  value={selectedEventId}
+                  onValueChange={setSelectedEventId}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select an event..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableEvents.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        No upcoming events found
+                      </SelectItem>
+                    ) : (
+                      availableEvents.map((event) => (
+                        <SelectItem key={event.id} value={event.id}>
+                          {event.title} —{' '}
+                          {new Date(event.startDate).toLocaleDateString()} @{' '}
+                          {event.location}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
                 <Button onClick={handleGenerateCode}>
                   <Plus className="mr-2 h-4 w-4" />
                   Generate QR Code

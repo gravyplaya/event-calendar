@@ -6,9 +6,10 @@ import { CalendarViewType } from '@/types/event';
 import { Suspense } from 'react';
 import { ModeToggle } from '@/components/mode-toggel';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, Users } from 'lucide-react';
 import { destroyAdminSession, requireAdminAuth } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
 interface AdminPageProps {
   searchParams: Promise<SearchParams>;
@@ -72,6 +73,12 @@ export default async function AdminPage(props: AdminPageProps) {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <Link href="/admin/subscribers">
+              <Button variant="outline" size="sm">
+                <Users className="mr-2 h-4 w-4" />
+                Subscribers
+              </Button>
+            </Link>
             <ModeToggle />
             <form action={handleLogout}>
               <Button variant="outline" size="sm" type="submit">
