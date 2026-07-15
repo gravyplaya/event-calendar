@@ -49,13 +49,19 @@ export const FormFooter = ({
         </div>
       )}
 
-      <Button variant="outline" onClick={onCancel} className="cursor-pointer">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={onCancel}
+        className="cursor-pointer"
+      >
         <X className="h-4 w-4" />
         {cancelText}
       </Button>
 
       <div className="flex gap-2">
         <Button
+          type="button"
           onClick={onSave}
           className="cursor-pointer"
           disabled={isSaveDisabled}

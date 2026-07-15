@@ -78,12 +78,8 @@
           "name": "event_check_in_codes_event_id_events_id_fk",
           "tableFrom": "event_check_in_codes",
           "tableTo": "events",
-          "columnsFrom": [
-            "event_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["event_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -268,12 +264,8 @@
           "name": "loyalty_transactions_subscriber_id_subscribers_id_fk",
           "tableFrom": "loyalty_transactions",
           "tableTo": "subscribers",
-          "columnsFrom": [
-            "subscriber_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["subscriber_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -281,12 +273,8 @@
           "name": "loyalty_transactions_event_id_events_id_fk",
           "tableFrom": "loyalty_transactions",
           "tableTo": "events",
-          "columnsFrom": [
-            "event_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["event_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -434,11 +422,7 @@
     "public.subscriber_status": {
       "name": "subscriber_status",
       "schema": "public",
-      "values": [
-        "active",
-        "unsubscribed",
-        "bounced"
-      ]
+      "values": ["active", "unsubscribed", "bounced"]
     }
   },
   "schemas": {},

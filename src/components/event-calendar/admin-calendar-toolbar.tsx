@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Settings,
-  Filter,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Filter } from 'lucide-react';
 import { Button } from '../ui/button';
 import { TimeFormatToggle } from './ui/time-format-toggel';
 import { TodayButton } from './ui/today-button';
@@ -221,10 +215,6 @@ export default function AdminCalendarToolbar() {
           />
           <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
           <CalendarSettingsDialog />
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2">
-            <Settings className="h-3.5 w-3.5" />
-            Settings
-          </Button>
         </div>
       </div>
     </div>

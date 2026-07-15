@@ -44,6 +44,8 @@ const DEFAULT_FORM_VALUES: EventFormValues = {
   flyerUrl: undefined,
   isRepeating: false,
   repeatingType: undefined,
+  submitterEmail: undefined,
+  submitterPhone: undefined,
 };
 
 function useIsMounted() {
@@ -107,6 +109,8 @@ export default function EventDialog({
           flyerUrl: selectedEvent.flyerUrl ?? undefined,
           isRepeating: selectedEvent.isRepeating ?? false,
           repeatingType: selectedEvent.repeatingType ?? undefined,
+          submitterEmail: selectedEvent.submitterEmail ?? undefined,
+          submitterPhone: selectedEvent.submitterPhone ?? undefined,
         });
       } catch (error) {
         console.error('Error resetting form with event data:', error);
@@ -160,7 +164,7 @@ export default function EventDialog({
   if (!isMounted) return null;
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={closeEventDialog} modal={false}>
+    <Dialog open={isDialogOpen} onOpenChange={closeEventDialog}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>Event Details</DialogTitle>

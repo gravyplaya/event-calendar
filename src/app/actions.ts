@@ -5,6 +5,7 @@ import { events } from '@/db/schema';
 import { CalendarViewType } from '@/types/event';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
+import { utapi } from '@/lib/uploadthing';
 import { and, between, eq, ilike, or, lte, gte, ne } from 'drizzle-orm';
 import {
   startOfDay,
@@ -451,7 +452,15 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
 
     const startDateTime = combineDateAndTime(startDate, startTime);
     const resolvedEndDate = endDate ?? startDate;
-    const endDateTime = combineDateAndTime(resolvedEndDate, endTime);
+    let endDateTime = combineDateAndTime(resolvedEndDate, endTime);
+
+    // If end time is earlier than start time on the same date, the event
+    // crosses midnight — roll the end date forward one day.
+    if (endDateTime < startDateTime) {
+      const next = new Date(endDateTime);
+      next.setDate(next.getDate() + 1);
+      endDateTime = next;
+    }
 
     // Validate that end time is at or after start time
     if (endDateTime < startDateTime) {
@@ -548,7 +557,7 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
         updatedAt: new Date(),
       });
 
-      revalidatePath('/demo');
+      revalidatePath('/calendar');
 
       return {
         success: true,
@@ -605,7 +614,7 @@ export async function updateEvent(
       })
       .where(and(eq(events.id, id)));
 
-    revalidatePath('/demo');
+    revalidatePath('/calendar');
     return { success: true };
   } catch (error) {
     console.error('Error updating event:', error);
@@ -621,8 +630,22 @@ export async function updateEvent(
 async function deleteFlyerFile(flyerUrl: string | null): Promise<void> {
   if (!flyerUrl) return;
   try {
+    // UploadThing-hosted files: extract the file key from the URL
+    // URL format: https://utfs.io/f/<fileKey>
+    if (flyerUrl.startsWith('http://') || flyerUrl.startsWith('https://')) {
+      const url = new URL(flyerUrl);
+      const fileKey = url.pathname.split('/').filter(Boolean).pop();
+      if (fileKey) {
+        await utapi.deleteFiles(fileKey);
+        console.log('🗑️ Deleted flyer from UploadThing:', fileKey);
+      }
+      return;
+    }
+
+    // Legacy local files: /uploads/flyers/<filename>
     const filePath = join(process.cwd(), 'public', flyerUrl);
     await unlink(filePath);
+    console.log('🗑️ Deleted local flyer file:', flyerUrl);
   } catch (err) {
     // File may already be gone — not a fatal error
     console.warn('Could not delete flyer file:', flyerUrl, err);
@@ -644,7 +667,7 @@ export async function deleteEvent(id: string) {
     await deleteFlyerFile(existingEvent[0].flyerUrl);
     await db.delete(events).where(and(eq(events.id, id)));
 
-    revalidatePath('/demo');
+    revalidatePath('/calendar');
     return { success: true };
   } catch (error) {
     console.error('Error deleting event:', error);
@@ -680,7 +703,7 @@ export async function approveEvent(id: string) {
       .set({ isApproved: true, updatedAt: new Date() })
       .where(eq(events.id, id));
 
-    revalidatePath('/demo');
+    revalidatePath('/calendar');
     return { success: true };
   } catch (error) {
     console.error('Error approving event:', error);
@@ -702,7 +725,7 @@ export async function rejectEvent(id: string) {
     await deleteFlyerFile(existingEvent[0]?.flyerUrl ?? null);
     await db.delete(events).where(eq(events.id, id));
 
-    revalidatePath('/demo');
+    revalidatePath('/calendar');
     return { success: true };
   } catch (error) {
     console.error('Error rejecting event:', error);

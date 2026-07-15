@@ -51,7 +51,9 @@ export const eventFormSchema = baseEventSchema
     startTime: z.string().regex(timeRegex),
     endTime: z.string().regex(timeRegex),
     isRepeating: z.boolean().default(false).optional(),
-    repeatingType: z.enum(['daily', 'weekly', 'biweekly', 'monthly']).optional(),
+    repeatingType: z
+      .enum(['daily', 'weekly', 'biweekly', 'monthly'])
+      .optional(),
     submitterEmail: z.string().email().optional(),
     submitterPhone: z.string().max(20).optional(),
     flyerUrl: z.string().max(512).optional(),

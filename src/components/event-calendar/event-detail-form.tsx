@@ -37,6 +37,7 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { UploadButton } from '@/components/uploadthing/upload-button';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
@@ -419,41 +420,10 @@ type EventDetailsFormProps = {
 };
 
 function FlyerUpload({ form }: { form: UseFormReturn<EventFormValues> }) {
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const currentFlyer = form.watch('flyerUrl');
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch('/api/upload/flyer', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Upload failed');
-      }
-
-      form.setValue('flyerUrl', data.url, { shouldDirty: true });
-    } catch (err) {
-      console.error('Flyer upload error:', err);
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
 
   const handleRemove = () => {
     form.setValue('flyerUrl', undefined, { shouldDirty: true });
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -479,21 +449,30 @@ function FlyerUpload({ form }: { form: UseFormReturn<EventFormValues> }) {
           </Button>
         </div>
       ) : (
-        <div className="flex items-center gap-3">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={handleFileChange}
-            disabled={isUploading}
-            className="text-muted-foreground file:bg-primary file:hover:bg-primary/90 file:text-primary-foreground w-full text-sm file:cursor-pointer file:rounded-md file:border-0 file:px-4 file:py-2 file:text-sm"
-          />
-          {isUploading && (
-            <span className="text-muted-foreground animate-pulse text-xs">
-              Uploading...
-            </span>
-          )}
-        </div>
+        <UploadButton
+          endpoint="flyerUploader"
+          onClientUploadComplete={(res) => {
+            if (res?.[0]?.ufsUrl) {
+              form.setValue('flyerUrl', res[0].ufsUrl, { shouldDirty: true });
+            }
+          }}
+          onUploadError={(error: Error) => {
+            console.error('Flyer upload error:', error);
+          }}
+          appearance={{
+            button:
+              'ut-ready:bg-primary ut-ready:hover:bg-primary/90 ut-ready:text-primary-foreground ut-uploading:bg-primary/70 ut-uploading:text-primary-foreground ut-ready:rounded-md ut-ready:px-4 ut-ready:py-2 ut-ready:text-sm ut-ready:cursor-pointer',
+            container: 'w-full',
+            allowedContent: 'text-muted-foreground text-xs',
+          }}
+          content={{
+            button({ ready, isUploading }) {
+              if (isUploading) return 'Uploading...';
+              if (ready) return 'Choose Flyer Image';
+              return 'Loading...';
+            },
+          }}
+        />
       )}
     </FormItem>
   );

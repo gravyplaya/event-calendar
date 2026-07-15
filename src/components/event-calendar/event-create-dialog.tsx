@@ -41,8 +41,8 @@ const DEFAULT_FORM_VALUES: EventFormValues = {
   color: EVENT_DEFAULTS.COLOR,
   isRepeating: false,
   repeatingType: undefined,
-  submitterEmail: '',
-  submitterPhone: '',
+  submitterEmail: undefined,
+  submitterPhone: undefined,
   flyerUrl: undefined,
 };
 
@@ -276,7 +276,6 @@ export default function EventCreateDialog({
     <Dialog
       open={isQuickAddDialogOpen}
       onOpenChange={(open) => !open && closeQuickAddDialog()}
-      modal={false}
     >
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
