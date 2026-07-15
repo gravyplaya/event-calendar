@@ -3,6 +3,8 @@
 import { db } from '@/db';
 import { events } from '@/db/schema';
 import { CalendarViewType } from '@/types/event';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 import { and, between, eq, ilike, or, lte, gte, ne } from 'drizzle-orm';
 import {
   startOfDay,
@@ -17,6 +19,7 @@ import {
 import { z } from 'zod';
 import { unstable_cache as cache, revalidatePath } from 'next/cache';
 import { combineDateAndTime } from '@/lib/date';
+import { isAdminAuthenticated } from '@/lib/admin-auth';
 import {
   createEventSchema,
   EventFilter,
@@ -141,6 +144,11 @@ export const getEvents = cache(
 
       if (filter.isRepeating) {
         conditions.push(eq(events.isRepeating, filter.isRepeating));
+      }
+
+      // Only show approved events unless explicitly requested (admin view)
+      if (!filter.includePending) {
+        conditions.push(eq(events.isApproved, true));
       }
 
       console.log(
@@ -313,10 +321,11 @@ export async function checkEventConflicts(
 ) {
   try {
     const { startDate, endDate, startTime, endTime, location } = eventData;
+    const resolvedEndDate = endDate ?? startDate;
 
     console.log('[checkEventConflicts] Starting conflict check:', {
       startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
+      endDate: resolvedEndDate.toISOString(),
       startTime,
       endTime,
       location,
@@ -325,7 +334,7 @@ export async function checkEventConflicts(
 
     // Combine date and time for proper comparison
     const startDateTime = combineDateAndTime(startDate, startTime);
-    const endDateTime = combineDateAndTime(endDate, endTime);
+    const endDateTime = combineDateAndTime(resolvedEndDate, endTime);
 
     console.log('[checkEventConflicts] Combined datetime ranges:', {
       startDateTime: startDateTime.toISOString(),
@@ -435,17 +444,21 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
       color,
       isRepeating,
       repeatingType,
+      submitterEmail,
+      submitterPhone,
+      flyerUrl,
     } = validatedFields.data;
 
     const startDateTime = combineDateAndTime(startDate, startTime);
-    const endDateTime = combineDateAndTime(endDate, endTime);
+    const resolvedEndDate = endDate ?? startDate;
+    const endDateTime = combineDateAndTime(resolvedEndDate, endTime);
 
-    // Validate that end time is after start time
-    if (endDateTime <= startDateTime) {
+    // Validate that end time is at or after start time
+    if (endDateTime < startDateTime) {
       return {
         success: false,
         error: 'Invalid time range',
-        message: 'End time must be after start time.',
+        message: 'End time must be at or after start time.',
       };
     }
 
@@ -513,6 +526,8 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
 
     // Attempt to create the event
     try {
+      const isAdmin = await isAdminAuthenticated();
+
       await db.insert(events).values({
         title,
         description,
@@ -521,13 +536,24 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
         startTime,
         endTime,
         location,
-        category,
+        category: category ?? 'General',
         color,
         isRepeating: isRepeating ?? false,
         repeatingType: repeatingType ?? null,
+        isApproved: isAdmin,
+        submitterEmail: submitterEmail ?? null,
+        submitterPhone: submitterPhone ?? null,
+        flyerUrl: flyerUrl ?? null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+
+      revalidatePath('/demo');
+
+      return {
+        success: true,
+        isApproved: isAdmin,
+      };
     } catch (dbError) {
       console.error('Database insertion failed:', dbError);
       return {
@@ -537,9 +563,6 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
           'Failed to create event due to a database error. Please try again.',
       };
     }
-
-    revalidatePath('/demo');
-    return { success: true };
   } catch (error) {
     console.error('Unexpected error creating event:', error);
     return {
@@ -593,6 +616,19 @@ export async function updateEvent(
   }
 }
 
+// ── Flyer file helpers ─────────────────────────────────────────────────
+
+async function deleteFlyerFile(flyerUrl: string | null): Promise<void> {
+  if (!flyerUrl) return;
+  try {
+    const filePath = join(process.cwd(), 'public', flyerUrl);
+    await unlink(filePath);
+  } catch (err) {
+    // File may already be gone — not a fatal error
+    console.warn('Could not delete flyer file:', flyerUrl, err);
+  }
+}
+
 export async function deleteEvent(id: string) {
   try {
     const existingEvent = await db
@@ -605,6 +641,7 @@ export async function deleteEvent(id: string) {
       throw new Error('Event not found or unauthorized');
     }
 
+    await deleteFlyerFile(existingEvent[0].flyerUrl);
     await db.delete(events).where(and(eq(events.id, id)));
 
     revalidatePath('/demo');
@@ -614,6 +651,64 @@ export async function deleteEvent(id: string) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete event',
+    };
+  }
+}
+
+// ── Event Approval Workflow ────────────────────────────────────────────
+
+export async function getPendingEvents() {
+  try {
+    const result = await db
+      .select()
+      .from(events)
+      .where(eq(events.isApproved, false))
+      .orderBy(events.createdAt)
+      .execute();
+
+    return { events: result, success: true };
+  } catch (error) {
+    console.error('Error fetching pending events:', error);
+    return { events: [], success: false };
+  }
+}
+
+export async function approveEvent(id: string) {
+  try {
+    await db
+      .update(events)
+      .set({ isApproved: true, updatedAt: new Date() })
+      .where(eq(events.id, id));
+
+    revalidatePath('/demo');
+    return { success: true };
+  } catch (error) {
+    console.error('Error approving event:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to approve event',
+    };
+  }
+}
+
+export async function rejectEvent(id: string) {
+  try {
+    const existingEvent = await db
+      .select({ flyerUrl: events.flyerUrl })
+      .from(events)
+      .where(eq(events.id, id))
+      .limit(1);
+
+    await deleteFlyerFile(existingEvent[0]?.flyerUrl ?? null);
+    await db.delete(events).where(eq(events.id, id));
+
+    revalidatePath('/demo');
+    return { success: true };
+  } catch (error) {
+    console.error('Error rejecting event:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to reject event',
     };
   }
 }

@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { subscribe } from '@/app/subscriber-actions';
 import { subscribeSchema, type SubscribeInput } from '@/lib/validations';
 
-export function LoyaltySignup() {
+export function LoyaltySignup({ embedded = false }: { embedded?: boolean } = {}) {
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -53,17 +53,15 @@ export function LoyaltySignup() {
     }
   };
 
-  return (
-    <section className="relative py-20 md:py-28">
-      <div className="container">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="mx-auto max-w-2xl"
-        >
-          <div className="glass-strong rounded-3xl p-8 md:p-12">
+  const inner = (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.7, ease: 'easeOut' }}
+      className="h-full"
+    >
+      <div className="glass-strong h-full rounded-3xl p-8 md:p-12">
             <div className="mb-8 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
                 <Sparkles className="text-primary h-4 w-4" />
@@ -223,8 +221,16 @@ export function LoyaltySignup() {
                 can unsubscribe at any time with one click.
               </p>
             </form>
-          </div>
-        </motion.div>
+      </div>
+    </motion.div>
+  );
+
+  if (embedded) return inner;
+
+  return (
+    <section className="relative py-20 md:py-28">
+      <div className="container">
+        <div className="mx-auto max-w-2xl">{inner}</div>
       </div>
     </section>
   );

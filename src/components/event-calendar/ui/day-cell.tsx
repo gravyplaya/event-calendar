@@ -56,7 +56,7 @@ export function DayCell({
         'group relative z-20 flex h-[80px] cursor-pointer flex-col rounded border transition-all sm:h-[140px] sm:p-2',
         'hover:border-primary focus:ring-primary hover:shadow-sm focus:ring-2 focus:outline-none',
         !isWithinMonth && monthViewConfig.hideOutsideDays
-          ? 'hidden'
+          ? 'invisible'
           : !isWithinMonth
             ? 'bg-muted/20 opacity-50'
             : '',

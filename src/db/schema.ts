@@ -22,14 +22,18 @@ export const events = pgTable('events', {
   isRepeating: boolean('is_repeating').notNull(),
   repeatingType: varchar('repeating_type', {
     length: 10,
-    enum: ['daily', 'weekly', 'monthly'],
-  }).$type<'daily' | 'weekly' | 'monthly'>(),
+    enum: ['daily', 'weekly', 'biweekly', 'monthly'],
+  }).$type<'daily' | 'weekly' | 'biweekly' | 'monthly'>(),
   location: varchar('location', {
     length: 256,
     enum: ['Restaurant/Bar', 'Basement Speakeasy', 'Both'],
   }).notNull(),
   category: varchar('category', { length: 100 }).notNull(),
   color: varchar('color', { length: 15 }).notNull(),
+  isApproved: boolean('is_approved').default(false).notNull(),
+  submitterEmail: varchar('submitter_email', { length: 256 }),
+  submitterPhone: varchar('submitter_phone', { length: 20 }),
+  flyerUrl: varchar('flyer_url', { length: 512 }),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),

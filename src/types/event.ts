@@ -16,10 +16,14 @@ export interface Events {
   startTime: string;
   endTime: string;
   isRepeating: boolean;
-  repeatingType: 'daily' | 'weekly' | 'monthly' | null;
+  repeatingType: 'daily' | 'weekly' | 'biweekly' | 'monthly' | null;
   location: (typeof LOCATION_OPTIONS)[number];
   category: string;
   color: string;
+  isApproved: boolean;
+  submitterEmail: string | null;
+  submitterPhone: string | null;
+  flyerUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

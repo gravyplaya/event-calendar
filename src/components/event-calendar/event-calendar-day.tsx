@@ -22,8 +22,13 @@ const COLUMN_WIDTH_TOTAL = 99.5; // Total width percentage for columns
 interface CalendarDayProps {
   events: Events[];
   currentDate: Date;
+  className?: string;
 }
-export function EventCalendarDay({ events, currentDate }: CalendarDayProps) {
+export function EventCalendarDay({
+  events,
+  currentDate,
+  className,
+}: CalendarDayProps) {
   const { timeFormat, viewSettings, openQuickAddDialog, openEventDialog } =
     useEventCalendarStore(
       useShallow((state) => ({
@@ -99,7 +104,7 @@ export function EventCalendarDay({ events, currentDate }: CalendarDayProps) {
   ]);
 
   return (
-    <div className="flex h-[760px] flex-col py-3">
+    <div className={cn('flex flex-col py-3', className ?? 'h-[760px]')}>
       <ScrollArea className="h-full w-full rounded-md px-4">
         <div className="relative mt-2 mb-2">
           <div className="absolute left-0 z-10 w-13">

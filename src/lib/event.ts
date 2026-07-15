@@ -45,15 +45,16 @@ export function useWeekDays(
   currentDate: Date,
   daysInWeek: number,
   locale?: Locale,
+  firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6,
 ) {
   const weekStart = useMemo(
-    () => startOfWeek(currentDate, { locale }),
-    [currentDate, locale],
+    () => startOfWeek(currentDate, { locale, weekStartsOn: firstDayOfWeek }),
+    [currentDate, locale, firstDayOfWeek],
   );
 
   const weekNumber = useMemo(
-    () => getWeek(currentDate, { locale }),
-    [currentDate, locale],
+    () => getWeek(currentDate, { locale, weekStartsOn: firstDayOfWeek }),
+    [currentDate, locale, firstDayOfWeek],
   );
 
   const weekDays = useMemo(() => {

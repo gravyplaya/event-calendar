@@ -27,6 +27,7 @@ export function EventCalendarYear({ events, currentDate }: CalendarYearProps) {
     openDayEventsDialog,
     setView,
     viewSettings,
+    firstDayOfWeek,
   } = useEventCalendarStore(
     useShallow((state) => ({
       openQuickAddDialog: state.openQuickAddDialog,
@@ -34,6 +35,7 @@ export function EventCalendarYear({ events, currentDate }: CalendarYearProps) {
       openDayEventsDialog: state.openDayEventsDialog,
       setView: state.setView,
       viewSettings: state.viewSettings.year,
+      firstDayOfWeek: state.firstDayOfWeek,
     })),
   );
 
@@ -108,6 +110,7 @@ export function EventCalendarYear({ events, currentDate }: CalendarYearProps) {
           eventsByDate={eventsByDate}
           eventCount={eventCountByMonth[getMonth(month)]}
           yearViewConfig={viewSettings}
+          firstDayOfWeek={firstDayOfWeek}
           onMonthClick={handleMonthClick}
           onEventClick={openEventDialog}
           onDateClick={handleDateClick}

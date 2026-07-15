@@ -60,9 +60,9 @@ export function AdminEventCalendar({
 
   return (
     <>
-      <EventDialog />
+      <EventDialog isAdmin={true} />
       <MonthDayEventsDialog />
-      <EventCreateDialog />
+      <EventCreateDialog isAdmin={true} />
       <div className="bg-background overflow-hidden rounded-xl border shadow-sm">
         <AdminCalendarToolbar />
         <div className="overflow-hidden p-0">{renderCalendarView}</div>

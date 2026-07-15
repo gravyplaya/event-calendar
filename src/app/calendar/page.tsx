@@ -4,7 +4,9 @@ import { SearchParams } from 'nuqs';
 import { searchParamsCache } from '@/lib/searchParams';
 import { CalendarViewType } from '@/types/event';
 import { Suspense } from 'react';
-import { ModeToggle } from '@/components/mode-toggel';
+import Navbar from '@/components/navbar';
+import { LandingFooter } from '@/components/landing/landing-sections';
+import { isAdminAuthenticated } from '@/lib/admin-auth';
 
 interface DemoPageProps {
   searchParams: Promise<SearchParams>;
@@ -13,6 +15,8 @@ interface DemoPageProps {
 export default async function DemoPage(props: DemoPageProps) {
   const searchParams = await props.searchParams;
   const search = searchParamsCache.parse(searchParams);
+
+  const isAdmin = await isAdminAuthenticated();
 
   console.log('📋 [DemoPage] Search params:', search);
 
@@ -44,16 +48,7 @@ export default async function DemoPage(props: DemoPageProps) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-semibold tracking-tight">
-              The Nest
-            </span>
-          </div>
-          <ModeToggle />
-        </div>
-      </header>
+      <Navbar />
       <main className="flex-1 py-6">
         <div className="container">
           <div className="mb-6">
@@ -78,18 +73,13 @@ export default async function DemoPage(props: DemoPageProps) {
               <EventCalendar
                 events={eventsResponse.events}
                 initialDate={search.date}
+                isAdmin={isAdmin}
               />
             </Suspense>
           </div>
         </div>
       </main>
-      <footer className="border-t py-4">
-        <div className="container">
-          <p className="text-muted-foreground text-center text-sm">
-            Want to contact us directly? Call Us (231) 747-8114
-          </p>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

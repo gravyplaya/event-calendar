@@ -205,7 +205,10 @@ export function HeroSection({
             />
             <div className="relative flex h-full w-full items-center justify-center p-4">
               <div className="h-full w-full overflow-hidden rounded-lg shadow-2xl">
-                <CalendarDay events={todayEvents} currentDate={today} />
+                <CalendarDay
+                  events={todayEvents}
+                  currentDate={today}
+                />
               </div>
             </div>
           </motion.div>

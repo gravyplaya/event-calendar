@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { CATEGORY_OPTIONS, EVENT_COLORS } from '@/constants/calendar-constant';
+import { EVENT_COLORS } from '@/constants/calendar-constant';
 import { ColorOptionItem } from './ui/color-option-item';
 import { z } from 'zod';
 import { getColorClasses } from '@/lib/event';
@@ -398,6 +398,7 @@ type EventDetailsFormProps = {
   form: UseFormReturn<EventFormValues>;
   onSubmit: (values: EventFormValues) => void;
   locale: Locale;
+  isAdmin?: boolean;
   conflicts?: Array<{
     id: string;
     title: string;
@@ -417,11 +418,93 @@ type EventDetailsFormProps = {
   onForceSave?: () => void;
 };
 
+function FlyerUpload({ form }: { form: UseFormReturn<EventFormValues> }) {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentFlyer = form.watch('flyerUrl');
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/upload/flyer', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      form.setValue('flyerUrl', data.url, { shouldDirty: true });
+    } catch (err) {
+      console.error('Flyer upload error:', err);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemove = () => {
+    form.setValue('flyerUrl', undefined, { shouldDirty: true });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  return (
+    <FormItem>
+      <FormLabel>Event Flyer</FormLabel>
+      {currentFlyer ? (
+        <div className="space-y-2">
+          <div className="border-muted relative overflow-hidden rounded-lg border">
+            <img
+              src={currentFlyer}
+              alt="Event flyer preview"
+              className="max-h-64 w-full object-contain"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleRemove}
+          >
+            <X className="mr-1 h-3.5 w-3.5" />
+            Remove Flyer
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleFileChange}
+            disabled={isUploading}
+            className="text-muted-foreground file:bg-primary file:hover:bg-primary/90 file:text-primary-foreground w-full text-sm file:cursor-pointer file:rounded-md file:border-0 file:px-4 file:py-2 file:text-sm"
+          />
+          {isUploading && (
+            <span className="text-muted-foreground animate-pulse text-xs">
+              Uploading...
+            </span>
+          )}
+        </div>
+      )}
+    </FormItem>
+  );
+}
+
 export const EventDetailsForm = memo(
   ({
     form,
     onSubmit,
     locale,
+    isAdmin = false,
     conflicts = [],
     conflictMessage,
     isCheckingConflicts = false,
@@ -524,6 +607,22 @@ export const EventDetailsForm = memo(
                 />
               )}
             />
+            {isAdmin && (
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <DateSelector
+                    value={field.value ?? form.getValues('startDate')}
+                    onChange={field.onChange}
+                    label="End Date"
+                    locale={locale}
+                  />
+                )}
+              />
+            )}
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField
               control={form.control}
               name="startTime"
@@ -532,21 +631,6 @@ export const EventDetailsForm = memo(
                   value={field.value}
                   onChange={field.onChange}
                   label="Start Time"
-                  required
-                />
-              )}
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="endDate"
-              render={({ field }) => (
-                <DateSelector
-                  value={field.value}
-                  onChange={field.onChange}
-                  label="End Date"
-                  locale={locale}
                   required
                 />
               )}
@@ -596,27 +680,36 @@ export const EventDetailsForm = memo(
             />
             <FormField
               control={form.control}
-              name="category"
+              name="repeatingType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Category <span className="text-destructive">*</span>
-                  </FormLabel>
+                  <FormLabel>Recurrence</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value ?? 'none'}
+                    onValueChange={(value) => {
+                      if (value === 'none') {
+                        form.setValue('isRepeating', false, {
+                          shouldDirty: true,
+                        });
+                        field.onChange(undefined);
+                      } else {
+                        form.setValue('isRepeating', true, {
+                          shouldDirty: true,
+                        });
+                        field.onChange(value);
+                      }
+                    }}
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder="Does not repeat" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {CATEGORY_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="none">Does not repeat</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -624,6 +717,46 @@ export const EventDetailsForm = memo(
               )}
             />
           </div>
+          {!isAdmin && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="submitterEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="your@email.com"
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="submitterPhone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="tel"
+                        placeholder="(231) 555-0100"
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
           <div>
             <FormField
               control={form.control}
@@ -659,6 +792,7 @@ export const EventDetailsForm = memo(
               )}
             />
           </div>
+          <FlyerUpload form={form} />
         </form>
       </Form>
     );

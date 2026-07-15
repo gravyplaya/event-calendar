@@ -53,6 +53,7 @@ export function EventCalendarMonth({ events, baseDate }: CalendarMonthProps) {
     baseDate,
     DAYS_IN_WEEK,
     localeObj,
+    firstDayOfWeek,
   );
 
   // Calculate visible days in month

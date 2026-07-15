@@ -20,7 +20,7 @@ const baseEventSchema = z.object({
   startTime: z.string().regex(timeRegex),
   endTime: z.string().regex(timeRegex),
   location: z.enum(LOCATION_OPTIONS),
-  category: z.string().min(1).max(100),
+  category: z.string().min(1).max(100).optional(),
   color: z.string().min(1).max(25),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -30,23 +30,31 @@ export const createEventSchema = z.object({
   title: z.string().min(1).max(256),
   description: z.string().min(1),
   startDate: z.date(),
-  endDate: z.date(),
+  endDate: z.date().optional(),
   startTime: z.string().regex(timeRegex),
   endTime: z.string().regex(timeRegex),
   location: z.enum(LOCATION_OPTIONS),
-  category: z.string().min(1).max(100),
+  category: z.string().min(1).max(100).optional(),
   isRepeating: z.boolean().default(false).optional(),
-  repeatingType: z.enum(['daily', 'weekly', 'monthly']).optional(),
+  repeatingType: z.enum(['daily', 'weekly', 'biweekly', 'monthly']).optional(),
   color: z.string().min(1).max(25),
+  submitterEmail: z.string().email().optional(),
+  submitterPhone: z.string().max(20).optional(),
+  flyerUrl: z.string().max(512).optional(),
 });
 
 export const eventFormSchema = baseEventSchema
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
+    startDate: z.date(),
+    endDate: z.date().optional(),
     startTime: z.string().regex(timeRegex),
     endTime: z.string().regex(timeRegex),
     isRepeating: z.boolean().default(false).optional(),
-    repeatingType: z.enum(['daily', 'weekly', 'monthly']).optional(),
+    repeatingType: z.enum(['daily', 'weekly', 'biweekly', 'monthly']).optional(),
+    submitterEmail: z.string().email().optional(),
+    submitterPhone: z.string().max(20).optional(),
+    flyerUrl: z.string().max(512).optional(),
   })
   .refine((data) => !data.isRepeating || data.repeatingType, {
     message: 'Repeating type is required for repeating events',
@@ -54,8 +62,9 @@ export const eventFormSchema = baseEventSchema
   })
   .refine(
     (data) => {
-      if (data.startDate.toDateString() !== data.endDate.toDateString()) {
-        return data.endDate > data.startDate;
+      const endDate = data.endDate ?? data.startDate;
+      if (data.startDate.toDateString() !== endDate.toDateString()) {
+        return endDate > data.startDate;
       }
       return validateTimeOrder(data.startTime, data.endTime);
     },
@@ -85,6 +94,7 @@ export const eventFilterSchema = z.object({
   locations: z.array(z.string()).default([]),
   repeatingTypes: z.array(z.string()).default([]),
   isRepeating: z.boolean().optional(),
+  includePending: z.boolean().default(false).optional(),
 });
 
 export const searchEventFilterSchema = z.object({

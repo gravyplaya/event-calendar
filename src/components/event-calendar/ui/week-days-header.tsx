@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 import { FormatOptions, isSameDay, Locale } from 'date-fns';
-import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 interface WeekDayHeadersProps {
@@ -33,12 +32,6 @@ export function WeekDayHeaders({
   highlightToday = true,
 }: WeekDayHeadersProps) {
   const today = new Date();
-  const reorderedDays = useMemo(() => {
-    const ordered = [...daysInWeek];
-    return ordered
-      .slice(firstDayOfWeek)
-      .concat(ordered.slice(0, firstDayOfWeek));
-  }, [daysInWeek, firstDayOfWeek]);
 
   return (
     <div className={cn('flex w-full items-center justify-around', className)}>
@@ -55,7 +48,7 @@ export function WeekDayHeaders({
           </div>
         </motion.div>
       )}
-      {reorderedDays.map((day, dayIndex) => {
+      {daysInWeek.map((day, dayIndex) => {
         const isToday = highlightToday && isSameDay(day, today);
 
         return (

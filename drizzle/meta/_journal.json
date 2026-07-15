@@ -22,6 +22,27 @@
       "when": 1784065173859,
       "tag": "0002_rapid_aaron_stack",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784096562197,
+      "tag": "0003_cold_human_cannonball",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784097777536,
+      "tag": "0004_slippery_cammi",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784098966973,
+      "tag": "0005_fast_titania",
+      "breakpoints": true
     }
   ]
 }

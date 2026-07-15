@@ -30,10 +30,12 @@ function Reveal({
   children,
   delay = 0,
   y = 40,
+  className = '',
 }: {
   children: ReactNode;
   delay?: number;
   y?: number;
+  className?: string;
 }) {
   return (
     <motion.div
@@ -41,6 +43,7 @@ function Reveal({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.7, ease: 'easeOut', delay }}
+      className={className}
     >
       {children}
     </motion.div>
@@ -410,7 +413,7 @@ export function FindUsSection() {
 }
 
 // ── FAQ section ──
-export function FAQSection() {
+export function FAQSection({ embedded = false }: { embedded?: boolean } = {}) {
   const faqs = [
     {
       q: 'Do I need a reservation?',
@@ -438,47 +441,89 @@ export function FAQSection() {
     },
   ];
 
-  return (
-    <section className="relative py-20 md:py-28">
-      <div className="relative container">
-        <SectionHeading
-          title="Frequently Asked Questions"
-          subtitle="Quick answers to the things people ask us most"
-        />
-        <div className="mx-auto max-w-3xl">
-          <Reveal>
-            <div className="glass-strong rounded-2xl p-6 md:p-8">
-              <Accordion type="single" collapsible className="w-full">
-                {faqs.map((faq, i) => (
-                  <AccordionItem key={i} value={`item-${i}`}>
-                    <AccordionTrigger className="hover:text-primary text-left">
-                      {faq.q}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      {faq.a.includes('events calendar') ? (
-                        <>
-                          Head to the{' '}
-                          <Link
-                            href="/calendar"
-                            className="text-primary font-medium hover:underline"
-                          >
-                            events calendar
-                          </Link>
-                          , find what interests you, and submit your info
-                          through the event form. We&apos;ll get back to you to
-                          confirm your spot and share any details you need.
-                        </>
-                      ) : (
-                        faq.a
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          </Reveal>
+  const content = embedded ? (
+    <div className="flex h-full flex-col">
+      <Reveal className="h-full">
+        <div className="glass-strong flex h-full flex-col rounded-2xl p-6 md:p-8">
+          <SectionHeading
+            title="Frequently Asked Questions"
+            subtitle="Quick answers to the things people ask us most"
+          />
+          <Accordion type="single" collapsible className="w-full">
+            {faqs.map((faq, i) => (
+              <AccordionItem key={i} value={`item-${i}`}>
+                <AccordionTrigger className="hover:text-primary text-left">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  {faq.a.includes('events calendar') ? (
+                    <>
+                      Head to the{' '}
+                      <Link
+                        href="/calendar"
+                        className="text-primary font-medium hover:underline"
+                      >
+                        events calendar
+                      </Link>
+                      , find what interests you, and submit your info
+                      through the event form. We&apos;ll get back to you to
+                      confirm your spot and share any details you need.
+                    </>
+                  ) : (
+                    faq.a
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
+      </Reveal>
+    </div>
+  ) : (
+    <div className="flex h-full flex-col">
+      <SectionHeading
+        title="Frequently Asked Questions"
+        subtitle="Quick answers to the things people ask us most"
+      />
+      <div className="mx-auto max-w-3xl">
+        <Reveal>
+          <div className="glass-strong rounded-2xl p-6 md:p-8">
+            <Accordion type="single" collapsible className="w-full">
+              {faqs.map((faq, i) => (
+                <AccordionItem key={i} value={`item-${i}`}>
+                  <AccordionTrigger className="hover:text-primary text-left">
+                    {faq.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {faq.a.includes('events calendar') ? (
+                      <>
+                        Head to the{' '}
+                        <Link
+                          href="/calendar"
+                          className="text-primary font-medium hover:underline"
+                        >
+                          events calendar
+                        </Link>
+                        , find what interests you, and submit your info
+                        through the event form. We&apos;ll get back to you to
+                        confirm your spot and share any details you need.
+                      </>
+                    ) : (
+                      faq.a
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </Reveal>
       </div>
+    </div>
+  );
+
+  return embedded ? content : (
+    <section className="relative py-20 md:py-28">
+      <div className="relative container">{content}</div>
     </section>
   );
 }

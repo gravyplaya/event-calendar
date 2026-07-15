@@ -76,6 +76,7 @@ export function EventCalendarDays({
     currentDate,
     daysCount,
     localeObj,
+    firstDayOfWeek,
   );
 
   const { singleDayEvents, multiDayEvents } = useFilteredEvents(

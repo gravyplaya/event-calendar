@@ -41,6 +41,9 @@ const DEFAULT_FORM_VALUES: EventFormValues = {
   endTime: DEFAULT_END_TIME,
   location: DEFAULT_LOCATION,
   color: DEFAULT_COLOR,
+  flyerUrl: undefined,
+  isRepeating: false,
+  repeatingType: undefined,
 };
 
 function useIsMounted() {
@@ -54,7 +57,11 @@ function useIsMounted() {
   return isMounted;
 }
 
-export default function EventDialog() {
+export default function EventDialog({
+  isAdmin = false,
+}: {
+  isAdmin?: boolean;
+}) {
   const {
     locale,
     selectedEvent,
@@ -97,6 +104,9 @@ export default function EventDialog() {
           endTime: selectedEvent.endTime || DEFAULT_END_TIME,
           location: selectedEvent.location || DEFAULT_LOCATION,
           color: selectedEvent.color,
+          flyerUrl: selectedEvent.flyerUrl ?? undefined,
+          isRepeating: selectedEvent.isRepeating ?? false,
+          repeatingType: selectedEvent.repeatingType ?? undefined,
         });
       } catch (error) {
         console.error('Error resetting form with event data:', error);
@@ -163,6 +173,7 @@ export default function EventDialog() {
             form={form}
             onSubmit={handleUpdate}
             locale={localeObj}
+            isAdmin={isAdmin}
           />
         </ScrollArea>
         <DialogFooter className="mt-2 flex flex-row">

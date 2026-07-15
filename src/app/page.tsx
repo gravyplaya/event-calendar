@@ -44,11 +44,17 @@ export default async function IndexPage() {
       <Navbar />
       <main className="flex-1">
         <HeroSection todayEvents={todayEvents} today={today} />
-        <TwoFloorsSection />
         <WhatToExpectSection />
+        <section className="relative py-20 md:py-28">
+          <div className="container">
+            <div className="grid gap-8 lg:grid-cols-2">
+              <FAQSection embedded />
+              <LoyaltySignup embedded />
+            </div>
+          </div>
+        </section>
         <FindUsSection />
-        <LoyaltySignup />
-        <FAQSection />
+        <TwoFloorsSection />
       </main>
       <LandingFooter />
     </div>

@@ -1,5 +1,6 @@
 import { AdminEventCalendar } from '@/components/event-calendar/admin-event-calendar';
-import { getEvents } from '@/app/actions';
+import { PendingEventsReview } from '@/components/event-calendar/pending-events-review';
+import { getEvents, getPendingEvents } from '@/app/actions';
 import { SearchParams } from 'nuqs';
 import { searchParamsCache } from '@/lib/searchParams';
 import { CalendarViewType } from '@/types/event';
@@ -7,6 +8,7 @@ import { Suspense } from 'react';
 import { ModeToggle } from '@/components/mode-toggel';
 import { Button } from '@/components/ui/button';
 import { LogOut, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { destroyAdminSession, requireAdminAuth } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -41,6 +43,7 @@ export default async function AdminPage(props: AdminPageProps) {
     locations: search.locations,
     isRepeating: search.isRepeating,
     repeatingTypes: search.repeatingTypes,
+    includePending: true,
   });
 
   console.log('📊 [AdminPage] Events response:', {
@@ -56,6 +59,8 @@ export default async function AdminPage(props: AdminPageProps) {
       : 'No events',
     error: eventsResponse.error,
   });
+
+  const pendingEventsResponse = await getPendingEvents();
 
   async function handleLogout() {
     'use server';
@@ -98,6 +103,19 @@ export default async function AdminPage(props: AdminPageProps) {
               for administrators.
             </p>
           </div>
+
+          {pendingEventsResponse.events.length > 0 && (
+            <div className="mb-6">
+              <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+                Pending Review
+                <Badge variant="destructive">
+                  {pendingEventsResponse.events.length}
+                </Badge>
+              </h2>
+              <PendingEventsReview events={pendingEventsResponse.events} />
+            </div>
+          )}
+
           <div className="bg-card overflow-hidden rounded-xl border shadow-sm">
             <Suspense
               fallback={

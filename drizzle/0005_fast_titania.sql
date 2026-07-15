@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "flyer_url" varchar(512);

@@ -8,6 +8,7 @@ import { isSameDay } from '@/lib/date';
 import { getColorClasses } from '@/lib/event';
 import { cn } from '@/lib/utils';
 import {
+  addDays,
   eachDayOfInterval,
   endOfMonth,
   format,
@@ -16,6 +17,7 @@ import {
   isSameMonth,
   isSameYear,
   startOfMonth,
+  startOfWeek,
 } from 'date-fns';
 import { ChevronRight, Plus } from 'lucide-react';
 import { memo, useMemo } from 'react';
@@ -26,6 +28,7 @@ interface MonthCardProps {
   eventsByDate: Record<string, Events[]>;
   eventCount: number;
   yearViewConfig: YearViewConfig;
+  firstDayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   onMonthClick: (month: Date) => void;
   onEventClick: (event: Events) => void;
   onDateClick: (date: Date) => void;
@@ -36,43 +39,50 @@ interface DayCellProps {
   day: Date;
   events: Events[];
   isToday: boolean;
+  isWithinMonth: boolean;
   onClick: () => void;
 }
 
-const DayCell = memo(({ day, events, isToday, onClick }: DayCellProps) => {
-  const hasDayEvents = events.length > 0;
+const DayCell = memo(
+  ({ day, events, isToday, isWithinMonth, onClick }: DayCellProps) => {
+    const hasDayEvents = events.length > 0;
 
-  const tooltipContent = useMemo(
-    () =>
-      hasDayEvents
-        ? `${events.length} Event on ${format(day, 'd MMMM yyyy')}`
-        : format(day, 'd MMMM yyyy'),
-    [hasDayEvents, events.length, day],
-  );
+    const tooltipContent = useMemo(
+      () =>
+        hasDayEvents
+          ? `${events.length} Event on ${format(day, 'd MMMM yyyy')}`
+          : format(day, 'd MMMM yyyy'),
+      [hasDayEvents, events.length, day],
+    );
 
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          className={cn(
-            'relative flex h-10 w-full items-center justify-center rounded-full p-0 text-[11px] transition-colors',
-            isToday ? 'bg-blue-500 font-bold text-white' : '',
-            hasDayEvents && !isToday ? 'bg-primary/10 font-medium' : '',
-          )}
-          onClick={onClick}
-        >
-          {getDate(day)}
-          {hasDayEvents && !isToday && (
-            <span className="bg-primary absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 transform rounded-full" />
-          )}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top" align="center">
-        {tooltipContent}
-      </TooltipContent>
-    </Tooltip>
-  );
-});
+    if (!isWithinMonth) {
+      return <div className="h-10" />;
+    }
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            className={cn(
+              'relative flex h-10 w-full items-center justify-center rounded-full p-0 text-[11px] transition-colors',
+              isToday ? 'bg-blue-500 font-bold text-white' : '',
+              hasDayEvents && !isToday ? 'bg-primary/10 font-medium' : '',
+            )}
+            onClick={onClick}
+          >
+            {getDate(day)}
+            {hasDayEvents && !isToday && (
+              <span className="bg-primary absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 transform rounded-full" />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" align="center">
+          {tooltipContent}
+        </TooltipContent>
+      </Tooltip>
+    );
+  },
+);
 
 DayCell.displayName = 'DayCell';
 
@@ -81,19 +91,30 @@ const MonthDaysGrid = memo(
     month,
     eventsByDate,
     onDateClick,
+    firstDayOfWeek,
   }: {
     month: Date;
     eventsByDate: Record<string, Events[]>;
     onDateClick: (date: Date) => void;
+    firstDayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   }) => {
+    const monthStart = startOfMonth(month);
+    const monthEnd = endOfMonth(month);
+    const gridStart = startOfWeek(monthStart, { weekStartsOn: firstDayOfWeek });
+
     const daysInMonth = eachDayOfInterval({
-      start: startOfMonth(month),
-      end: endOfMonth(month),
+      start: gridStart,
+      end: monthEnd,
+    });
+
+    const weekdayLabels = Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(gridStart, i);
+      return format(d, 'EEEEEE');
     });
 
     return (
       <div className="grid grid-cols-7 gap-1 text-center text-xs">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+        {weekdayLabels.map((day, i) => (
           <div
             key={i}
             className="text-muted-foreground mb-1 text-[10px] font-medium"
@@ -103,12 +124,14 @@ const MonthDaysGrid = memo(
         ))}
         {daysInMonth.map((day) => {
           const dateKey = format(day, 'yyyy-MM-dd');
+          const isWithinMonth = isSameMonth(day, month);
           return (
             <DayCell
               key={dateKey}
               day={day}
-              events={eventsByDate[dateKey] || []}
+              events={isWithinMonth ? eventsByDate[dateKey] || [] : []}
               isToday={isSameDay(day, new Date())}
+              isWithinMonth={isWithinMonth}
               onClick={() => onDateClick(day)}
             />
           );
@@ -126,6 +149,7 @@ const MonthCard = memo(
     eventsByDate,
     eventCount,
     yearViewConfig,
+    firstDayOfWeek,
     onMonthClick,
     onEventClick,
     onDateClick,
@@ -191,6 +215,7 @@ const MonthCard = memo(
           month={month}
           eventsByDate={eventsByDate}
           onDateClick={onDateClick}
+          firstDayOfWeek={firstDayOfWeek}
         />
 
         {hasEvents && yearViewConfig.enableEventPreview ? (

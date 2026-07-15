@@ -18,9 +18,14 @@ import { Events } from '@/types/event';
 interface EventCalendarProps {
   events: Events[];
   initialDate: Date;
+  isAdmin?: boolean;
 }
 
-export function EventCalendar({ initialDate, events }: EventCalendarProps) {
+export function EventCalendar({
+  initialDate,
+  events,
+  isAdmin = false,
+}: EventCalendarProps) {
   const { viewMode, currentView, daysCount } = useEventCalendarStore(
     useShallow((state) => ({
       viewMode: state.viewMode,
@@ -57,11 +62,11 @@ export function EventCalendar({ initialDate, events }: EventCalendarProps) {
 
   return (
     <>
-      <EventDialog />
+      <EventDialog isAdmin={isAdmin} />
       <MonthDayEventsDialog />
-      <EventCreateDialog />
+      <EventCreateDialog isAdmin={isAdmin} />
       <div className="bg-background overflow-hidden rounded-xl border shadow-sm">
-        <CalendarToolbar />
+        <CalendarToolbar isAdmin={isAdmin} />
         <div className="overflow-hidden p-0">{renderCalendarView}</div>
       </div>
     </>

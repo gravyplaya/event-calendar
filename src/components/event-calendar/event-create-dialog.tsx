@@ -37,12 +37,20 @@ const DEFAULT_FORM_VALUES: EventFormValues = {
   category: EVENT_DEFAULTS.CATEGORY,
   startTime: EVENT_DEFAULTS.START_TIME,
   endTime: EVENT_DEFAULTS.END_TIME,
-  location: 'Restaurant/Bar', // Use the first valid location option as default
+  location: 'Restaurant/Bar',
   color: EVENT_DEFAULTS.COLOR,
   isRepeating: false,
+  repeatingType: undefined,
+  submitterEmail: '',
+  submitterPhone: '',
+  flyerUrl: undefined,
 };
 
-export default function EventCreateDialog() {
+export default function EventCreateDialog({
+  isAdmin = false,
+}: {
+  isAdmin?: boolean;
+}) {
   const {
     isQuickAddDialogOpen,
     closeQuickAddDialog,
@@ -73,7 +81,6 @@ export default function EventCreateDialog() {
   const eventData = useMemo(() => {
     if (
       watchedValues.startDate &&
-      watchedValues.endDate &&
       watchedValues.startTime &&
       watchedValues.endTime &&
       watchedValues.location
@@ -82,7 +89,7 @@ export default function EventCreateDialog() {
         title: watchedValues.title || 'Untitled Event',
         description: watchedValues.description || '',
         startDate: watchedValues.startDate,
-        endDate: watchedValues.endDate,
+        endDate: watchedValues.endDate ?? watchedValues.startDate,
         startTime: watchedValues.startTime,
         endTime: watchedValues.endTime,
         location: watchedValues.location,
@@ -172,7 +179,15 @@ export default function EventCreateDialog() {
       }
 
       // Success case
-      toast.success('Event Successfully Created');
+      if (result.isApproved) {
+        toast.success('Event Successfully Created');
+      } else {
+        toast.success('Event Submitted for Review', {
+          description:
+            'Your event has been submitted. An admin will review and approve it before it appears on the calendar.',
+          duration: 6000,
+        });
+      }
       form.reset(DEFAULT_FORM_VALUES);
       clearConflicts(); // Clear any existing conflicts
       setIsSubmitting(false);
@@ -281,6 +296,7 @@ export default function EventCreateDialog() {
                 form={form}
                 onSubmit={handleSubmit}
                 locale={localeObj}
+                isAdmin={isAdmin}
                 conflicts={conflicts}
                 conflictMessage={conflictMessage}
                 isCheckingConflicts={isCheckingConflicts}

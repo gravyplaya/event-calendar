@@ -29,7 +29,11 @@ import { EventCalendarFilters } from './event-calendar-filters';
 import CalendarSettingsDialog from './event-calendar-setting-dialog';
 import { getLocaleFromCode } from '@/lib/event';
 
-export default function EventCalendarToolbar() {
+export default function EventCalendarToolbar({
+  isAdmin = false,
+}: {
+  isAdmin?: boolean;
+}) {
   const [date, setDate] = useQueryState(
     'date',
     parseAsIsoDate.withDefault(new Date()).withOptions({
@@ -210,7 +214,7 @@ export default function EventCalendarToolbar() {
             onChange={handleTimeFormatChange}
           />
           <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
-          <CalendarSettingsDialog />
+          {isAdmin && <CalendarSettingsDialog />}
         </div>
       </div>
     </div>
