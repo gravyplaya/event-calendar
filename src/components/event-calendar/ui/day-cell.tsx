@@ -29,7 +29,7 @@ export function DayCell({
   locale,
   timeFormat,
   monthViewConfig,
-  focusedDate,
+  focusedDate: _focusedDate,
   onQuickAdd,
   onFocusDate,
   onShowDayEvents,
@@ -40,10 +40,10 @@ export function DayCell({
   const isToday = isSameDay(date, new Date());
   const isWithinMonth = isSameMonth(date, baseDate);
   const isEmpty = dayEvents.length === 0;
-  const firstEvent = dayEvents[0];
-  const _isFocused = focusedDate && isSameDay(date, focusedDate);
+  const eventLimit = monthViewConfig.eventLimit ?? 3;
+  const visibleEvents = dayEvents.slice(0, eventLimit);
+  const hiddenCount = dayEvents.length - visibleEvents.length;
   const shouldRenderEvents = isWithinMonth && dayEvents.length > 0;
-  const colorClasses = firstEvent ? getColorClasses(firstEvent.color) : null;
   return (
     <div
       data-date={dateKey}
@@ -93,44 +93,51 @@ export function DayCell({
       </div>
       {isWithinMonth && (
         <div className="item flex flex-1 flex-col justify-center gap-1 overflow-hidden">
-          {shouldRenderEvents && firstEvent && (
-            <button
-              className={cn(
-                'relative z-0 flex cursor-pointer flex-col justify-start text-left',
-                'rounded p-1 text-xs',
-                'transition-colors hover:opacity-90',
-                colorClasses?.bg ?? 'bg-primary',
+          {shouldRenderEvents && (
+            <>
+              {visibleEvents.map((event) => {
+                const colorClasses = getColorClasses(event.color);
+                return (
+                  <button
+                    key={event.id}
+                    className={cn(
+                      'relative z-0 flex cursor-pointer flex-col justify-start text-left',
+                      'rounded p-1 text-xs',
+                      'transition-colors hover:opacity-90',
+                      colorClasses?.bg ?? 'bg-primary',
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenEvent(event);
+                    }}
+                  >
+                    <span className="truncate font-medium text-white">
+                      {event.title}
+                    </span>
+                    <div className="hidden items-center truncate text-white sm:flex">
+                      <Clock className="mr-1 h-3 w-3" />
+                      <span className="truncate">
+                        {formatTimeDisplay(event.startTime, timeFormat)} -{' '}
+                        {formatTimeDisplay(event.endTime, timeFormat)}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+              {hiddenCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="bg-muted hover:bg-muted/90 h-1.5 w-full gap-1 truncate rounded p-2 text-xs sm:mt-auto sm:h-5 sm:p-5 sm:px-1"
+                  onClick={() => onShowDayEvents(date)}
+                >
+                  <Plus className="h-1.5 w-1.5" />
+                  <span className="hidden sm:block">{hiddenCount} more</span>
+                </Button>
               )}
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenEvent(firstEvent);
-              }}
-            >
-              <span className="truncate font-medium text-white">
-                {firstEvent.title}
-              </span>
-              <div className="hidden items-center truncate text-white sm:flex">
-                <Clock className="mr-1 h-3 w-3" />
-                <span className="truncate">
-                  {formatTimeDisplay(firstEvent.startTime, timeFormat)} -{' '}
-                  {formatTimeDisplay(firstEvent.endTime, timeFormat)}
-                </span>
-              </div>
-            </button>
+            </>
           )}
-          {dayEvents.length > 1 ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="bg-muted hover:bg-muted/90 h-1.5 w-full gap-1 truncate rounded p-2 text-xs sm:mt-auto sm:h-5 sm:p-5 sm:px-1"
-              onClick={() => onShowDayEvents(date)}
-            >
-              <Plus className="h-1.5 w-1.5" />
-              <span className="hidden sm:block">
-                {dayEvents.length - 1} more
-              </span>
-            </Button>
-          ) : (
+          {(isEmpty || hiddenCount === 0) && (
             <Button
               variant="ghost"
               size="sm"
