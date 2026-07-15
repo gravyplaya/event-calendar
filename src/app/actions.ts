@@ -20,6 +20,7 @@ import {
 import { z } from 'zod';
 import { unstable_cache as cache, revalidatePath } from 'next/cache';
 import { combineDateAndTime } from '@/lib/date';
+import { expandRepeatingEvents } from '@/lib/event';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import {
   createEventSchema,
@@ -101,6 +102,9 @@ export const getEvents = cache(
 
       const conditions = [];
 
+      // Fetch events that overlap the visible date range, PLUS repeating
+      // events whose original start date is before the range (they may
+      // generate occurrences that fall within the range).
       conditions.push(
         or(
           and(
@@ -114,6 +118,12 @@ export const getEvents = cache(
               lte(events.startDate, dateRange.start),
               gte(events.endDate, dateRange.end),
             ),
+          ),
+          // Repeating events that start before the range — their
+          // occurrences will be expanded after the query.
+          and(
+            eq(events.isRepeating, true),
+            lte(events.startDate, dateRange.end),
           ),
         ),
       );
@@ -164,8 +174,16 @@ export const getEvents = cache(
         .where(and(...conditions))
         .execute();
 
+      // Expand repeating events into virtual occurrences within the range
+      const expandedResult = expandRepeatingEvents(
+        result,
+        dateRange.start,
+        dateRange.end,
+      );
+
       console.log('✅ [getEvents] Raw database result:', {
         count: result.length,
+        expandedCount: expandedResult.length,
         firstEvent: result[0]
           ? {
               id: result[0].id,
@@ -174,12 +192,14 @@ export const getEvents = cache(
               endDate: result[0].endDate,
               startTime: result[0].startTime,
               endTime: result[0].endTime,
+              isRepeating: result[0].isRepeating,
+              repeatingType: result[0].repeatingType,
             }
           : 'No events found',
       });
 
       return {
-        events: result,
+        events: expandedResult,
         success: true,
         timestamp: new Date().toISOString(),
       };

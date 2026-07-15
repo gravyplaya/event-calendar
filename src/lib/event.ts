@@ -1,5 +1,7 @@
 import {
   addDays,
+  addWeeks,
+  addMonths,
   differenceInDays,
   getWeek,
   Locale,
@@ -10,6 +12,7 @@ import { useMemo } from 'react';
 import {
   CalendarViewType,
   EventPosition,
+  Events,
   MultiDayEventRowType,
   TimeFormatType,
 } from '@/types/event';
@@ -615,4 +618,130 @@ export const getColorClasses = (color: string) =>
  */
 export const getLocaleFromCode = (code: string) => {
   return LOCALES.find((l) => l.value === code)?.locale || enUS;
+};
+
+// ── Repeating event expansion ──────────────────────────────────────────
+
+/**
+ * Interval in days for each repeating type.
+ */
+const REPEAT_INTERVAL_DAYS: Record<string, number> = {
+  daily: 1,
+  weekly: 7,
+  biweekly: 14,
+};
+
+/**
+ * Advances a date by one "month" for monthly repeating events.
+ * Uses addMonths so day-of-month is preserved when possible.
+ */
+const advanceMonthly = (date: Date): Date => addMonths(date, 1);
+
+/**
+ * Advances a date by exactly one repeat interval for the given type.
+ */
+const advanceByRepeatType = (
+  date: Date,
+  repeatingType: string | null,
+): Date => {
+  if (repeatingType === 'monthly') return advanceMonthly(date);
+  const days = REPEAT_INTERVAL_DAYS[repeatingType ?? ''];
+  if (days) return addDays(date, days);
+  return date;
+};
+
+/**
+ * Returns the number of milliseconds in a single repeat interval,
+ * used for quick overlap checks.
+ */
+const repeatIntervalMs = (repeatingType: string | null): number | null => {
+  if (repeatingType === 'monthly') return null; // variable, handle separately
+  const days = REPEAT_INTERVAL_DAYS[repeatingType ?? ''];
+  return days ? days * 24 * 60 * 60 * 1000 : null;
+};
+
+/**
+ * Expands repeating events into virtual occurrences that fall within
+ * the given date range. Non-repeating events pass through unchanged.
+ *
+ * Each virtual occurrence gets a synthetic ID in the form
+ * `<originalId>__repeat_<n>` so React keys stay unique and the
+ * occurrence can be traced back to its parent event.
+ *
+ * @param rawEvents - Events fetched from the database (single rows)
+ * @param rangeStart - Start of the visible date range
+ * @param rangeEnd   - End of the visible date range
+ * @returns Array of events with repeating ones expanded into occurrences
+ */
+export const expandRepeatingEvents = <T extends Events>(
+  rawEvents: T[],
+  rangeStart: Date,
+  rangeEnd: Date,
+): T[] => {
+  const result: T[] = [];
+
+  for (const event of rawEvents) {
+    if (!event.isRepeating || !event.repeatingType) {
+      result.push(event);
+      continue;
+    }
+
+    const { repeatingType } = event;
+    const eventDurationMs = event.endDate.getTime() - event.startDate.getTime();
+
+    // Walk forward from the original start date, generating occurrences
+    // that overlap [rangeStart, rangeEnd].
+    let occurrenceStart = new Date(event.startDate);
+    let occurrenceNum = 0;
+
+    // If the event starts way before the range, fast-forward to the
+    // first occurrence that could possibly overlap the range.
+    const intervalMs = repeatIntervalMs(repeatingType);
+    if (intervalMs && occurrenceStart < rangeStart) {
+      const diffMs = rangeStart.getTime() - occurrenceStart.getTime();
+      const intervalsToSkip = Math.floor(diffMs / intervalMs);
+      if (intervalsToSkip > 0) {
+        occurrenceStart = new Date(
+          occurrenceStart.getTime() + intervalsToSkip * intervalMs,
+        );
+        occurrenceNum = intervalsToSkip;
+      }
+    }
+
+    // Cap iterations to prevent infinite loops on bad data
+    const MAX_ITERATIONS = 500;
+    let iterations = 0;
+
+    while (occurrenceStart <= rangeEnd && iterations < MAX_ITERATIONS) {
+      const occurrenceEnd = new Date(
+        occurrenceStart.getTime() + eventDurationMs,
+      );
+
+      // Does this occurrence overlap the visible range?
+      if (occurrenceEnd >= rangeStart && occurrenceStart <= rangeEnd) {
+        result.push({
+          ...event,
+          id: `${event.id}__repeat_${occurrenceNum}`,
+          startDate: new Date(occurrenceStart),
+          endDate: occurrenceEnd,
+        });
+      }
+
+      // Advance to next occurrence
+      occurrenceStart = advanceByRepeatType(occurrenceStart, repeatingType);
+      occurrenceNum++;
+      iterations++;
+
+      // For fixed-interval types we can bail early once we're past the range
+      if (intervalMs && occurrenceStart > rangeEnd) break;
+    }
+
+    if (iterations >= MAX_ITERATIONS) {
+      console.warn(
+        `[expandRepeatingEvents] Hit iteration cap for event ${event.id}`,
+      );
+    }
+  }
+
+  return result;
 };
