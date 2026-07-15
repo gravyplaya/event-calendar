@@ -146,9 +146,9 @@ export function HeroSection({
               </Button>
               <Button
                 size="lg"
-                variant="outline"
                 asChild
-                className="glass-strong border-white/20 text-white hover:bg-white/10 hover:text-white"
+                className="glow-primary border-0 text-white hover:opacity-90"
+                style={{ backgroundColor: '#FF8C00' }}
               >
                 <Link href="/menu" className="gap-2">
                   <UtensilsCrossed size={16} />

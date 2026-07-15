@@ -146,7 +146,13 @@ function SectionHeading({
 }
 
 // ── Feature data ──
-const FEATURES = [
+const FEATURES: {
+  icon: typeof Heart;
+  title: string;
+  description: string;
+  glow: string;
+  href?: string;
+}[] = [
   {
     icon: Heart,
     title: 'Come As You Are',
@@ -160,6 +166,7 @@ const FEATURES = [
     description:
       'Comfort food done right. From shareable plates to late-night bites, the kitchen stays open late to keep you fed.',
     glow: 'rgba(255, 140, 0, 0.15)',
+    href: '/menu',
   },
   {
     icon: Music,
@@ -167,6 +174,7 @@ const FEATURES = [
     description:
       'Live performances, DJ nights, drag shows, and special events on both floors. Check the calendar and grab a spot.',
     glow: 'rgba(255, 237, 0, 0.12)',
+    href: '/calendar',
   },
   {
     icon: Users,
@@ -205,7 +213,7 @@ export function TwoFloorsSection() {
       />
       <div className="relative container">
         <SectionHeading
-          title="Two Floors. Two Vibes."
+          title="Two Floors. Two Vibes. Coming Soon."
           subtitle="One building, two distinct experiences. Come for dinner upstairs, stay for the night downstairs."
         />
         <div className="grid gap-6 md:grid-cols-2">
@@ -291,28 +299,37 @@ export function WhatToExpectSection() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((feature, i) => {
             const Icon = feature.icon;
+            const card = (
+              <TiltCard
+                glowColor={feature.glow}
+                className="glass h-full rounded-2xl border border-white/5"
+              >
+                <div className="relative z-10 p-6">
+                  <div
+                    className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg transition-transform group-hover:scale-110"
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <Icon className="text-primary h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-semibold">{feature.title}</h3>
+                  <p className="text-muted-foreground mt-3 text-sm">
+                    {feature.description}
+                  </p>
+                </div>
+              </TiltCard>
+            );
             return (
               <Reveal key={feature.title} delay={i * 0.08}>
-                <TiltCard
-                  glowColor={feature.glow}
-                  className="glass h-full rounded-2xl border border-white/5"
-                >
-                  <div className="relative z-10 p-6">
-                    <div
-                      className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg transition-transform group-hover:scale-110"
-                      style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                      }}
-                    >
-                      <Icon className="text-primary h-6 w-6" />
-                    </div>
-                    <h3 className="text-xl font-semibold">{feature.title}</h3>
-                    <p className="text-muted-foreground mt-3 text-sm">
-                      {feature.description}
-                    </p>
-                  </div>
-                </TiltCard>
+                {feature.href ? (
+                  <Link href={feature.href} className="block h-full">
+                    {card}
+                  </Link>
+                ) : (
+                  card
+                )}
               </Reveal>
             );
           })}
@@ -392,18 +409,22 @@ export function FindUsSection() {
               <h3 className="mb-6 text-xl font-semibold">Hours</h3>
               <div className="space-y-2">
                 <div className="flex items-center justify-between border-b border-white/5 py-3">
-                  <span className="font-medium">Sunday - Tuesday</span>
+                  <span className="font-medium">Monday</span>
                   <span className="text-muted-foreground">Closed</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-white/5 py-3">
-                  <span className="font-medium">Wednesday – Saturday</span>
+                  <span className="font-medium">Tuesday – Thursday</span>
                   <span className="text-primary">5:00 PM – 12:00 AM</span>
                 </div>
+                <div className="flex items-center justify-between border-b border-white/5 py-3">
+                  <span className="font-medium">Friday – Saturday</span>
+                  <span className="text-primary">5:00 PM – 2:00 AM</span>
+                </div>
+                <div className="flex items-center justify-between border-b border-white/5 py-3">
+                  <span className="font-medium">Sunday</span>
+                  <span className="text-primary">1:00 PM – 10:00 PM</span>
+                </div>
               </div>
-              <p className="text-muted-foreground mt-4 flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4" />
-                Kitchen closes one hour before bar close.
-              </p>
             </div>
           </Reveal>
         </div>
@@ -465,9 +486,9 @@ export function FAQSection({ embedded = false }: { embedded?: boolean } = {}) {
                       >
                         events calendar
                       </Link>
-                      , find what interests you, and submit your info
-                      through the event form. We&apos;ll get back to you to
-                      confirm your spot and share any details you need.
+                      , find what interests you, and submit your info through
+                      the event form. We&apos;ll get back to you to confirm your
+                      spot and share any details you need.
                     </>
                   ) : (
                     faq.a
@@ -504,9 +525,9 @@ export function FAQSection({ embedded = false }: { embedded?: boolean } = {}) {
                         >
                           events calendar
                         </Link>
-                        , find what interests you, and submit your info
-                        through the event form. We&apos;ll get back to you to
-                        confirm your spot and share any details you need.
+                        , find what interests you, and submit your info through
+                        the event form. We&apos;ll get back to you to confirm
+                        your spot and share any details you need.
                       </>
                     ) : (
                       faq.a
@@ -521,7 +542,9 @@ export function FAQSection({ embedded = false }: { embedded?: boolean } = {}) {
     </div>
   );
 
-  return embedded ? content : (
+  return embedded ? (
+    content
+  ) : (
     <section className="relative py-20 md:py-28">
       <div className="relative container">{content}</div>
     </section>

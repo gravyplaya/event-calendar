@@ -67,8 +67,8 @@ export default function RootLayout({
       <body className={` ${jakarta.variable} font-jakarta antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
+          defaultTheme="light"
+          enableSystem
           disableTransitionOnChange
         >
           <Toaster expand={true} richColors position="top-center" />
