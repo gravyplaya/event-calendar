@@ -14,6 +14,7 @@ import {
   getLocaleFromCode,
   useEventPositions,
   useFilteredEvents,
+  useMultiDayDailyChips,
   useMultiDayEventRows,
   useWeekDays,
 } from '@/lib/event';
@@ -84,6 +85,7 @@ export function EventCalendarWeek({ events, currentDate }: CalendarWeekProps) {
   );
 
   const multiDayEventRows = useMultiDayEventRows(multiDayEvents, weekDays);
+  const multiDayDailyChips = useMultiDayDailyChips(multiDayEvents, weekDays);
   const timeSlots = useMemo(() => generateTimeSlots(START_HOUR, END_HOUR), []);
 
   const totalMultiDayRows =
@@ -303,6 +305,41 @@ export function EventCalendarWeek({ events, currentDate }: CalendarWeekProps) {
                       position={position}
                       leftOffset={leftPercent}
                       rightOffset={rightPercent}
+                      onClick={openEventDialog}
+                    />
+                  );
+                })}
+
+                {/* Multi-day daily chips — one cell per (event × day) so every
+                    calendar day the event touches gets its own visible mark,
+                    even when the event spills across week boundaries. */}
+                {multiDayDailyChips.map((chip) => {
+                  const { event, dayIndex, row } = chip;
+
+                  // Each chip is a small bar at the top of its day-column,
+                  // stacked vertically (row 0, row 1, …) when several
+                  // multi-day events touch the same day.
+                  const CHIP_HEIGHT = 24;
+                  const CHIP_GAP = 4;
+                  const chipTop = row * (CHIP_HEIGHT + CHIP_GAP) + CHIP_GAP;
+                  const dayWidthPercent = DAY_WIDTH_PERCENT;
+                  const leftOffset = dayIndex * dayWidthPercent;
+                  const rightOffset = 100 - (dayIndex + 1) * dayWidthPercent;
+
+                  return (
+                    <EventDialogTrigger
+                      event={event}
+                      key={`${event.id}-${dayIndex}`}
+                      position={{
+                        id: `${event.id}-${dayIndex}`,
+                        top: chipTop,
+                        height: CHIP_HEIGHT,
+                        column: 0,
+                        totalColumns: 1,
+                        dayIndex,
+                      }}
+                      leftOffset={leftOffset}
+                      rightOffset={rightOffset}
                       onClick={openEventDialog}
                     />
                   );

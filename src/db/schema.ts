@@ -22,8 +22,8 @@ export const events = pgTable('events', {
   isRepeating: boolean('is_repeating').notNull(),
   repeatingType: varchar('repeating_type', {
     length: 10,
-    enum: ['daily', 'weekly', 'biweekly', 'monthly'],
-  }).$type<'daily' | 'weekly' | 'biweekly' | 'monthly'>(),
+    enum: ['daily', 'weekly', 'biweekly', 'monthly', 'yearly'],
+  }).$type<'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly'>(),
   location: varchar('location', {
     length: 256,
     enum: ['Restaurant/Bar', 'Basement Speakeasy', 'Both'],

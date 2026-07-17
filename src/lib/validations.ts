@@ -36,7 +36,9 @@ export const createEventSchema = z.object({
   location: z.enum(LOCATION_OPTIONS),
   category: z.string().min(1).max(100).optional(),
   isRepeating: z.boolean().default(false).optional(),
-  repeatingType: z.enum(['daily', 'weekly', 'biweekly', 'monthly']).optional(),
+  repeatingType: z
+    .enum(['daily', 'weekly', 'biweekly', 'monthly', 'yearly'])
+    .optional(),
   color: z.string().min(1).max(25),
   submitterEmail: z.string().email().optional(),
   submitterPhone: z.string().max(20).optional(),
@@ -52,7 +54,7 @@ export const eventFormSchema = baseEventSchema
     endTime: z.string().regex(timeRegex),
     isRepeating: z.boolean().default(false).optional(),
     repeatingType: z
-      .enum(['daily', 'weekly', 'biweekly', 'monthly'])
+      .enum(['daily', 'weekly', 'biweekly', 'monthly', 'yearly'])
       .optional(),
     submitterEmail: z.string().email().optional(),
     submitterPhone: z.string().max(20).optional(),

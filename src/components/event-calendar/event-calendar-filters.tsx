@@ -262,23 +262,25 @@ export const EventCalendarFilters = () => {
                   Repeat Frequency
                 </h4>
                 <div className="space-y-3">
-                  {['daily', 'weekly', 'monthly'].map((type) => (
-                    <div key={type} className="flex items-center space-x-3">
-                      <Checkbox
-                        id={`repeat-${type}`}
-                        checked={filters.repeatingTypes.includes(type)}
-                        onCheckedChange={() =>
-                          toggleArrayFilter('repeatingTypes', type)
-                        }
-                      />
-                      <Label
-                        htmlFor={`repeat-${type}`}
-                        className="cursor-pointer text-sm font-normal capitalize"
-                      >
-                        {type}
-                      </Label>
-                    </div>
-                  ))}
+                  {['daily', 'weekly', 'biweekly', 'monthly', 'yearly'].map(
+                    (type) => (
+                      <div key={type} className="flex items-center space-x-3">
+                        <Checkbox
+                          id={`repeat-${type}`}
+                          checked={filters.repeatingTypes.includes(type)}
+                          onCheckedChange={() =>
+                            toggleArrayFilter('repeatingTypes', type)
+                          }
+                        />
+                        <Label
+                          htmlFor={`repeat-${type}`}
+                          className="cursor-pointer text-sm font-normal capitalize"
+                        >
+                          {type}
+                        </Label>
+                      </div>
+                    ),
+                  )}
                 </div>
               </div>
             </PopoverContent>

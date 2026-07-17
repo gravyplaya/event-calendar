@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { deleteEvent, updateEvent } from '@/app/actions';
 import { useShallow } from 'zustand/shallow';
 import { getLocaleFromCode } from '@/lib/event';
+import { useRouter } from 'next/navigation';
 
 const DEFAULT_START_TIME = '09:00';
 const DEFAULT_END_TIME = '10:00';
@@ -85,6 +86,7 @@ export default function EventDialog({
 
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState<boolean>(false);
   const isMounted = useIsMounted();
+  const router = useRouter();
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -130,6 +132,7 @@ export default function EventDialog({
           throw new Error(result.error || 'Failed to update event');
         }
         closeEventDialog();
+        router.refresh();
         return 'Event updated successfully!';
       },
       error: (error) => {
@@ -152,6 +155,7 @@ export default function EventDialog({
           throw new Error(result.error || 'Failed to delete event');
         }
         closeEventDialog();
+        router.refresh();
         return 'Event deleted successfully!';
       },
       error: (error) => {
@@ -211,6 +215,13 @@ export default function EventDialog({
             isOpen={isDeleteAlertOpen}
             onOpenChange={setIsDeleteAlertOpen}
             onConfirm={handleDeleteEvent}
+            title="Delete this event?"
+            description={
+              selectedEvent?.isRepeating
+                ? 'This is a repeating event. Deleting it removes the entire series and any future occurrences.'
+                : 'Are you sure you want to delete this event? This action cannot be undone.'
+            }
+            confirmText="Delete"
           />
           <FormFooter
             onCancel={closeEventDialog}

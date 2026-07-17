@@ -25,6 +25,7 @@ import { createEvent } from '@/app/actions';
 import { getLocaleFromCode } from '@/lib/event';
 import { FormFooter } from './ui/form-footer';
 import { useConflictDetection } from '@/hooks/use-conflict-detection';
+import { useRouter } from 'next/navigation';
 
 type EventFormValues = z.infer<typeof createEventSchema>;
 
@@ -71,6 +72,7 @@ export default function EventCreateDialog({
     defaultValues: DEFAULT_FORM_VALUES,
     mode: 'onChange',
   });
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allowForceSave] = useState(false); // Set to true for authorized users
   const localeObj = getLocaleFromCode(locale);
@@ -114,84 +116,79 @@ export default function EventCreateDialog({
     watchedValues.repeatingType,
   ]);
 
-  // Use on-demand conflict detection
+  // Conflict state — passed through to the form's ConflictWarning UI.
+  // Save is no longer disabled on conflict (server treats overlaps as a soft
+  // warning now); see handleSubmit below.
   const {
-    hasConflict,
+    hasConflict: _hasConflict,
     conflicts,
     message: conflictMessage,
     isChecking: isCheckingConflicts,
     error: conflictError,
-    checkConflicts,
     clearConflicts,
   } = useConflictDetection(eventData, {
-    enabled: false, // Disable automatic checking
+    enabled: false,
     delay: 0,
   });
 
   const handleSubmit = async (formValues: EventFormValues) => {
-    // First, check for conflicts using the current form data
-    await checkConflicts();
-
-    // Small delay to allow state updates
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // If conflicts are detected, show warning and block save
-    if (hasConflict && conflicts.length > 0) {
-      toast.error('Cannot save event', {
-        description:
-          'Conflicts detected. Please review and resolve conflicts before saving.',
-        duration: 5000,
-      });
-      return;
-    }
-
-    // Check if there was an error checking conflicts
-    if (conflictError) {
-      toast.error('Conflict check failed', {
-        description: `${conflictError}. Please try again or check your connection.`,
-        duration: 5000,
-      });
-      return;
-    }
-
+    // Overlap warnings are advisory only — same as the server's policy.
+    // We always call createEvent; the response carries any conflicts under
+    // `warnings` so the toast can show them as a soft notice after the save.
     setIsSubmitting(true);
 
     try {
       const result = await createEvent(formValues);
 
       if (!result.success) {
-        // Handle conflict detection errors with detailed information
-        if (result.conflicts && result.conflicts.length > 0) {
-          const conflictMessages = result.conflicts
-            .map((conflict) => `• "${conflict.title}" (${conflict.timeRange})`)
-            .join('\n');
-
-          toast.error(`Location Booking Conflict`, {
-            description: `${result.message}\n\nConflicting events:\n${conflictMessages}`,
-            duration: 10000,
-          });
-        } else {
-          // Handle other errors
-          toast.error(result.error || 'Error Creating Event');
-        }
+        // Failure paths now only surface validation / DB errors.
+        // Conflict overlaps became soft warnings — see the success branch below.
+        toast.error(result.error || 'Error Creating Event');
         setIsSubmitting(false);
         return;
       }
 
       // Success case
       if (result.isApproved) {
-        toast.success('Event Successfully Created');
+        if (result.warnings) {
+          const conflictMessages = result.warnings.conflicts
+            .map(
+              (conflict) =>
+                `• "${conflict.title}" (${conflict.timeRange}, ${conflict.dateRange})`,
+            )
+            .join('\n');
+          toast.success('Event Successfully Created', {
+            description: `${result.warnings.message}\n\nOverlapping events:\n${conflictMessages}`,
+            duration: 8000,
+          });
+        } else {
+          toast.success('Event Successfully Created');
+        }
       } else {
-        toast.success('Event Submitted for Review', {
-          description:
-            'Your event has been submitted. An admin will review and approve it before it appears on the calendar.',
-          duration: 6000,
-        });
+        if (result.warnings) {
+          const conflictMessages = result.warnings.conflicts
+            .map(
+              (conflict) =>
+                `• "${conflict.title}" (${conflict.timeRange}, ${conflict.dateRange})`,
+            )
+            .join('\n');
+          toast.success('Event Submitted for Review', {
+            description: `${result.warnings.message}\n\nOverlapping events:\n${conflictMessages}`,
+            duration: 8000,
+          });
+        } else {
+          toast.success('Event Submitted for Review', {
+            description:
+              'Your event has been submitted. An admin will review and approve it before it appears on the calendar.',
+            duration: 6000,
+          });
+        }
       }
       form.reset(DEFAULT_FORM_VALUES);
       clearConflicts(); // Clear any existing conflicts
       setIsSubmitting(false);
       closeQuickAddDialog();
+      router.refresh();
     } catch (error) {
       console.error('Error:', error);
       let errorMessage = 'Ops! something went wrong';
@@ -323,7 +320,7 @@ export default function EventCreateDialog({
             onCancel={handleCancel}
             onSave={form.handleSubmit(handleSubmit)}
             isSubmitting={isSubmitting}
-            hasConflict={hasConflict}
+            hasConflict={_hasConflict}
             conflictMessage={conflictMessage}
             isCheckingConflicts={isCheckingConflicts}
             allowForceSave={allowForceSave}

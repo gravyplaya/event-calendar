@@ -8,10 +8,12 @@ import { Check, X, Calendar, Clock, MapPin, Mail, Phone } from 'lucide-react';
 import { approveEvent, rejectEvent } from '@/app/actions';
 import { toast } from 'sonner';
 import { Events } from '@/types/event';
+import { useRouter } from 'next/navigation';
 
 export function PendingEventsReview({ events }: { events: Events[] }) {
   const [, startTransition] = useTransition();
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const router = useRouter();
 
   if (events.length === 0) {
     return (
@@ -30,6 +32,7 @@ export function PendingEventsReview({ events }: { events: Events[] }) {
         toast.success(`Approved "${title}"`, {
           description: 'The event is now visible on the public calendar.',
         });
+        router.refresh();
       } else {
         toast.error('Failed to approve event');
       }
@@ -43,6 +46,7 @@ export function PendingEventsReview({ events }: { events: Events[] }) {
         toast.success(`Rejected "${title}"`, {
           description: 'The event has been permanently removed.',
         });
+        router.refresh();
       } else {
         toast.error('Failed to reject event');
       }

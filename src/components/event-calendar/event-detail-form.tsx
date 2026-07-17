@@ -164,7 +164,7 @@ const ConflictWarning = memo(
                 )}
               >
                 {message ||
-                  `${conflicts.length} conflicting event${conflicts.length !== 1 ? 's' : ''} found`}
+                  `${conflicts.length} overlapping event${conflicts.length !== 1 ? 's' : ''} at this location`}
               </h3>
 
               <div className="flex flex-shrink-0 items-center gap-1">
@@ -689,6 +689,7 @@ export const EventDetailsForm = memo(
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="biweekly">Bi-weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

@@ -28,16 +28,16 @@ export const FormFooter = ({
   allowForceSave = false,
   onForceSave,
 }: FormFooterProps) => {
-  const isSaveDisabled = isSubmitting || hasConflict || isCheckingConflicts;
+  const isSaveDisabled = isSubmitting || isCheckingConflicts;
 
   return (
     <div className="flex flex-row items-center gap-2">
-      {/* Conflict Status Indicator */}
+      {/* Conflict Status Indicator (advisory only — Save is still enabled) */}
       {hasConflict && !isCheckingConflicts && (
-        <div className="text-destructive mr-auto flex items-center gap-2 text-sm">
+        <div className="mr-auto flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
           <AlertTriangle className="h-4 w-4" />
           <span className="hidden sm:inline">
-            {conflictMessage || 'Conflicts detected'}
+            {conflictMessage || 'Overlapping events at this location'}
           </span>
         </div>
       )}

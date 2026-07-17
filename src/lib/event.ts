@@ -1,10 +1,11 @@
 import {
   addDays,
-  addWeeks,
   addMonths,
-  differenceInDays,
+  addYears,
+  isWithinInterval,
   getWeek,
   Locale,
+  startOfDay,
   startOfWeek,
   format,
 } from 'date-fns';
@@ -103,9 +104,14 @@ export function useFilteredEvents(events: EventTypes[], daysInWeek: Date[]) {
     events.forEach((event) => {
       const startDate = new Date(event.startDate);
       const endDate = new Date(event.endDate);
-      const dayDiff = differenceInDays(endDate, startDate);
 
-      const isSingleDay = dayDiff <= 1;
+      // An event is single-day iff both timestamps land on the same calendar
+      // day. Cross-midnight events (e.g. 10pm Tue -> 2am Wed) live on two
+      // different calendar days even though `differenceInDays` returns 1
+      // after the createEvent midnight roll-forward — we want those drawn
+      // as a 2-day multi-day block, not bucketed into single-day where
+      // they'd only render on the start day.
+      const isSingleDay = isSameDay(startDate, endDate);
       const isMultiDayInWeek =
         (startDate >= firstDayOfWeek && startDate <= lastDayOfWeek) ||
         (endDate >= firstDayOfWeek && endDate <= lastDayOfWeek) ||
@@ -281,6 +287,172 @@ export function useMultiDayEventRows(
 
     return rows;
   }, [multiDayEvents, daysInWeek]);
+}
+
+export interface MultiDayDailyChip {
+  event: EventTypes;
+  dayIndex: number;
+  row: number;
+  // Whether this occurrence is the FIRST visible day of the event in this
+  // week (i.e. the event started before this dayIndex). Used by the renderer
+  // to optionally show a "continues from previous week" affordance.
+  isSeriesStart: boolean;
+  // Whether this occurrence is the LAST visible day of the event in this
+  // week (i.e. the event ends after this dayIndex).
+  isSeriesEnd: boolean;
+  // True when the event also has a day in the *previous* week — used so the
+  // renderer can draw a left-rounded cap instead of a flush edge.
+  hasPriorDayInWeek: boolean;
+  // True when the event also has a day in the *next* week — used so the
+  // renderer can draw a right-rounded cap instead of a flush edge.
+  hasNextDayInWeek: boolean;
+}
+
+/**
+ * Expands a list of multi-day events into per-day chips for the current week.
+ *
+ * Where `useMultiDayEventRows` produces one row-positioned block per week
+ * (so a 7-day event in a single week renders as one wide bar that gets
+ * clipped at the week boundary), this hook produces one chip per
+ * (event × day) pair where the day falls inside both the event's range and
+ * the visible week. That makes every day the event touches show its own
+ * clickable cell in the calendar grid — what users expect from
+ * "an event that spans multiple days".
+ *
+ * Chips from different events that would collide on the same day are
+ * stacked into rows using the same first-fit overlap rule as
+ * `useMultiDayEventRows`.
+ */
+export function useMultiDayDailyChips(
+  multiDayEvents: EventTypes[],
+  daysInWeek: Date[],
+): MultiDayDailyChip[] {
+  return useMemo(() => {
+    // Build the chips first (one per day × event), then do a second pass to
+    // allocate rows using simple first-fit: any chip can occupy the first row
+    // whose same-day chips belong to a different event.
+    type RawChip = Omit<MultiDayDailyChip, 'row'>;
+    const raw: RawChip[] = [];
+
+    for (const event of multiDayEvents) {
+      const eventStart = startOfDay(new Date(event.startDate));
+      const eventEnd = startOfDay(new Date(event.endDate));
+
+      // Find the first dayIndex in this week that the event touches.
+      let firstVisible = -1;
+      let lastVisible = -1;
+      let hasPriorDayInWeek = false;
+      let hasNextDayInWeek = false;
+
+      for (let i = 0; i < daysInWeek.length; i++) {
+        const day = startOfDay(daysInWeek[i]);
+        if (isWithinInterval(day, { start: eventStart, end: eventEnd })) {
+          raw.push({
+            event,
+            dayIndex: i,
+            isSeriesStart: false, // filled in below
+            isSeriesEnd: false,
+            hasPriorDayInWeek: false,
+            hasNextDayInWeek: false,
+          });
+          if (firstVisible === -1) firstVisible = i;
+          lastVisible = i;
+        }
+      }
+
+      if (firstVisible === -1) continue;
+
+      // Mark start/end/continuation flags using the bounds we just found.
+      // An event that started before this week contributes a chip at
+      // firstVisible that needs the left "continues" affordance; an event
+      // that ends after this week contributes a chip at lastVisible that
+      // needs the right "continues" affordance.
+      hasPriorDayInWeek = eventStart < startOfDay(daysInWeek[firstVisible]);
+      hasNextDayInWeek = eventEnd > startOfDay(daysInWeek[lastVisible]);
+
+      // Update the chips we just pushed for this event with the flags.
+      for (const chip of raw) {
+        if (chip.event !== event) continue;
+        if (chip.dayIndex === firstVisible) {
+          chip.isSeriesStart = true;
+          chip.hasPriorDayInWeek = hasPriorDayInWeek;
+        }
+        if (chip.dayIndex === lastVisible) {
+          chip.isSeriesEnd = true;
+          chip.hasNextDayInWeek = hasNextDayInWeek;
+        }
+      }
+    }
+
+    // First-fit row allocation: for each (dayIndex, sorted by chip order),
+    // assign to the lowest row that doesn't already hold a chip on that day.
+    const chips: MultiDayDailyChip[] = [];
+    const rowByDay: Record<string, boolean> = {};
+    for (const r of raw) {
+      let row = 0;
+      while (rowByDay[`${r.dayIndex}-${row}`]) row += 1;
+      rowByDay[`${r.dayIndex}-${row}`] = true;
+      chips.push({ ...r, row });
+    }
+    return chips;
+  }, [multiDayEvents, daysInWeek]);
+}
+
+/**
+ * Groups events by calendar day inside an arbitrary date range, expanding
+ * multi-day events into per-day occurrences so every calendar day the
+ * event touches gets a copy in the result. Months, days, and the day-grid
+ * inside a year view all read from this shape.
+ *
+ * Single-day events appear once, in their start-date bucket. Multi-day
+ * events appear once per day in their date range, including the start
+ * and end days — both are inclusive (a Jul 17 → Jul 19 event produces
+ * three buckets: Jul 17, Jul 18, Jul 19).
+ *
+ * Each day occurrence is synthesized as `{ ...original, _instanceDate: day }`
+ * so a caller can tell which specific occurrence it's looking at if needed,
+ * but it inherits the original event's identity for `onClick` and color.
+ */
+export function groupEventsByDayInRange(
+  events: EventTypes[],
+  rangeStart: Date,
+  rangeEnd: Date,
+): Record<string, (EventTypes & { _instanceDate: Date })[]> {
+  const out: Record<string, (EventTypes & { _instanceDate: Date })[]> = {};
+  const fmtKey = (d: Date) => format(d, 'yyyy-MM-dd');
+
+  const ensure = (key: string) => {
+    if (!out[key]) out[key] = [];
+    return out[key];
+  };
+
+  const startBoundary = startOfDay(rangeStart);
+  const endBoundary = startOfDay(rangeEnd);
+
+  for (const event of events) {
+    const eventStart = startOfDay(new Date(event.startDate));
+    const eventEnd = startOfDay(new Date(event.endDate));
+
+    // Clip the event's range to the visible range so we don't enumerate
+    // every day of a multi-year event just because the user is on month view.
+    const cursorStart = eventStart > startBoundary ? eventStart : startBoundary;
+    const cursorEnd = eventEnd < endBoundary ? eventEnd : endBoundary;
+
+    if (cursorEnd < cursorStart) continue;
+
+    // Walk from cursorStart to cursorEnd, day by day. Multi-day events are
+    // rare in the dataset and month grids are ≤42 cells, so a naive loop is
+    // plenty fast — no incremental-interval math needed.
+    let cursor = new Date(cursorStart);
+    while (cursor <= cursorEnd) {
+      ensure(fmtKey(cursor)).push({
+        ...event,
+        _instanceDate: new Date(cursor),
+      });
+      cursor = addDays(cursor, 1);
+    }
+  }
+  return out;
 }
 
 /**
@@ -623,7 +795,8 @@ export const getLocaleFromCode = (code: string) => {
 // ── Repeating event expansion ──────────────────────────────────────────
 
 /**
- * Interval in days for each repeating type.
+ * Interval in days for each fixed-interval repeating type.
+ * Monthly / yearly use calendar-aware addMonths / addYears instead.
  */
 const REPEAT_INTERVAL_DAYS: Record<string, number> = {
   daily: 1,
@@ -632,19 +805,16 @@ const REPEAT_INTERVAL_DAYS: Record<string, number> = {
 };
 
 /**
- * Advances a date by one "month" for monthly repeating events.
- * Uses addMonths so day-of-month is preserved when possible.
- */
-const advanceMonthly = (date: Date): Date => addMonths(date, 1);
-
-/**
- * Advances a date by exactly one repeat interval for the given type.
+ * Advances a date by one repeat interval. Monthly / yearly are
+ * calendar-aware (preserves day-of-month / Feb 29 semantics);
+ * the rest are fixed-day intervals.
  */
 const advanceByRepeatType = (
   date: Date,
   repeatingType: string | null,
 ): Date => {
-  if (repeatingType === 'monthly') return advanceMonthly(date);
+  if (repeatingType === 'monthly') return addMonths(date, 1);
+  if (repeatingType === 'yearly') return addYears(date, 1);
   const days = REPEAT_INTERVAL_DAYS[repeatingType ?? ''];
   if (days) return addDays(date, days);
   return date;
@@ -652,10 +822,11 @@ const advanceByRepeatType = (
 
 /**
  * Returns the number of milliseconds in a single repeat interval,
- * used for quick overlap checks.
+ * used for quick overlap checks. Null for variable-length types
+ * (monthly / yearly) — those are handled by advancement alone.
  */
 const repeatIntervalMs = (repeatingType: string | null): number | null => {
-  if (repeatingType === 'monthly') return null; // variable, handle separately
+  if (repeatingType === 'monthly' || repeatingType === 'yearly') return null;
   const days = REPEAT_INTERVAL_DAYS[repeatingType ?? ''];
   return days ? days * 24 * 60 * 60 * 1000 : null;
 };

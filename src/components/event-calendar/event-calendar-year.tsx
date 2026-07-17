@@ -6,7 +6,6 @@ import {
   endOfYear,
   format,
   getMonth,
-  isSameYear,
   startOfYear,
 } from 'date-fns';
 import { useEventCalendarStore } from '@/hooks/use-event';
@@ -14,6 +13,7 @@ import { useShallow } from 'zustand/shallow';
 import { CalendarViewType, Events } from '@/types/event';
 import { MonthCard } from './ui/month-card';
 import { parseAsIsoDate, useQueryState } from 'nuqs';
+import { groupEventsByDayInRange } from '@/lib/event';
 
 interface CalendarYearProps {
   events: Events[];
@@ -52,20 +52,32 @@ export function EventCalendarYear({ events, currentDate }: CalendarYearProps) {
     return eachMonthOfInterval({ start: yearStart, end: yearEnd });
   }, [currentDate]);
 
+  // Group events per calendar day across the whole year, expanding
+  // multi-day events into per-day occurrences so a Jul 17 → Jul 20 event
+  // surfaces in all four month cards its days fall in, not just the start
+  // month. The month count tally below also benefits: a 30-day event
+  // contributes to every month it touches, not just the start month.
   const { eventsByDate, eventCountByMonth } = useMemo(() => {
     const groupedEvents: Record<string, Events[]> = {};
     const counts = new Array(12).fill(0);
 
-    events.forEach((event) => {
-      const eventDate = new Date(event.startDate);
-      if (isSameYear(eventDate, currentDate)) {
-        const dateKey = format(eventDate, 'yyyy-MM-dd');
-        const monthIndex = getMonth(eventDate);
+    const yearStart = startOfYear(currentDate);
+    const yearEnd = endOfYear(currentDate);
+    const expanded = groupEventsByDayInRange(events, yearStart, yearEnd);
 
-        (groupedEvents[dateKey] ||= []).push(event);
-        counts[monthIndex]++;
-      }
-    });
+    for (const [dateKey, list] of Object.entries(expanded)) {
+      const [, mm] = dateKey.split('-');
+      const monthIndex = Number(mm) - 1; // 0-based
+
+      // Each occurrence is the underlying event identity, not a per-day
+      // clone. Day cells in MonthCard only need the title/color/etc., so
+      // dropping the extra `_instanceDate` flag is fine here.
+      groupedEvents[dateKey] = list as unknown as Events[];
+
+      // Bump the month counter for each occurrence so a multi-day event
+      // running across months contributes to each one.
+      counts[monthIndex] += 1;
+    }
 
     return { eventsByDate: groupedEvents, eventCountByMonth: counts };
   }, [events, currentDate]);

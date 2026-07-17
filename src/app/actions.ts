@@ -18,7 +18,7 @@ import {
   endOfYear,
 } from 'date-fns';
 import { z } from 'zod';
-import { unstable_cache as cache, revalidatePath } from 'next/cache';
+import { unstable_cache as cache, revalidatePath, updateTag } from 'next/cache';
 import { combineDateAndTime } from '@/lib/date';
 import { expandRepeatingEvents } from '@/lib/event';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
@@ -31,6 +31,23 @@ import {
 } from '@/lib/validations';
 
 const REVALIDATE_TIME = 3600;
+
+/**
+ * Strips the synthetic repeat-occurrence suffix that `expandRepeatingEvents`
+ * attaches at query time (format: `<uuid>__repeat_<n>`). Server actions that
+ * take an event id from the client receive these synthetic ids and need to
+ * resolve them to the underlying parent row before talking to the DB — the
+ * `__repeat_<n>` tail is not a valid UUID and would otherwise crash Postgres
+ * with `invalid input syntax for type uuid`.
+ *
+ * Returns the input unchanged when no suffix is present so it's safe to call
+ * unconditionally on any id-like string.
+ */
+function extractEventUuid(id: string | null | undefined): string {
+  if (!id) return '';
+  const at = id.indexOf('__repeat_');
+  return at === -1 ? id : id.slice(0, at);
+}
 
 export const getEvents = cache(
   async (filterParams: EventFilter) => {
@@ -344,25 +361,10 @@ export async function checkEventConflicts(
     const { startDate, endDate, startTime, endTime, location } = eventData;
     const resolvedEndDate = endDate ?? startDate;
 
-    console.log('[checkEventConflicts] Starting conflict check:', {
-      startDate: startDate.toISOString(),
-      endDate: resolvedEndDate.toISOString(),
-      startTime,
-      endTime,
-      location,
-      excludeEventId,
-    });
-
     // Combine date and time for proper comparison
     const startDateTime = combineDateAndTime(startDate, startTime);
     const endDateTime = combineDateAndTime(resolvedEndDate, endTime);
 
-    console.log('[checkEventConflicts] Combined datetime ranges:', {
-      startDateTime: startDateTime.toISOString(),
-      endDateTime: endDateTime.toISOString(),
-    });
-
-    // Build query conditions for overlapping events
     const conditions = [
       // Case-insensitive location match
       ilike(events.location, location),
@@ -373,18 +375,10 @@ export async function checkEventConflicts(
       ),
     ];
 
-    // Exclude current event if updating
     if (excludeEventId) {
       conditions.push(ne(events.id, excludeEventId));
     }
 
-    console.log(
-      '[checkEventConflicts] Query conditions:',
-      conditions.length,
-      'conditions',
-    );
-
-    // Query for overlapping events
     const overlappingEvents = await db
       .select({
         id: events.id,
@@ -399,12 +393,6 @@ export async function checkEventConflicts(
       .where(and(...conditions))
       .execute();
 
-    console.log('[checkEventConflicts] Database query result:', {
-      overlappingEventsCount: overlappingEvents.length,
-      firstEvent: overlappingEvents[0] || 'No overlapping events',
-    });
-
-    // Format conflicts for display
     const conflicts = overlappingEvents.map((event) => ({
       id: event.id,
       title: event.title,
@@ -415,22 +403,14 @@ export async function checkEventConflicts(
       location: event.location,
     }));
 
-    const result = {
+    return {
       hasConflict: conflicts.length > 0,
       conflicts,
       message:
         conflicts.length > 0
-          ? `Location "${location}" is already booked for ${conflicts.length} conflicting event(s).`
+          ? `Heads up: ${conflicts.length} other event${conflicts.length === 1 ? '' : 's'} already booked "${location}" during this time.`
           : undefined,
     };
-
-    console.log('[checkEventConflicts] Final result:', {
-      hasConflict: result.hasConflict,
-      conflictsCount: result.conflicts.length,
-      message: result.message,
-    });
-
-    return result;
   } catch (error) {
     console.error('Error checking for event conflicts:', error);
     return {
@@ -490,19 +470,14 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
         message: 'End time must be at or after start time.',
       };
     }
-
-    // Check for overlapping events at the same location
-    let overlappingEvents: Array<{
-      id: string;
+    let conflicts: Array<{
       title: string;
-      startDate: Date;
-      endDate: Date;
-      startTime: string;
-      endTime: string;
+      timeRange: string;
+      dateRange: string;
       location: string;
-    }>;
+    }> = [];
     try {
-      overlappingEvents = await db
+      const overlap = await db
         .select({
           id: events.id,
           title: events.title,
@@ -515,9 +490,7 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
         .from(events)
         .where(
           and(
-            // Case-insensitive location match
             ilike(events.location, location),
-            // Overlap detection: startDate < new_endDate AND endDate > new_startDate
             and(
               lte(events.startDate, endDateTime),
               gte(events.endDate, startDateTime),
@@ -525,32 +498,16 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
           ),
         )
         .execute();
-    } catch (dbError) {
-      console.error('Database conflict check failed:', dbError);
-      return {
-        success: false,
-        error: 'Conflict check failed',
-        message:
-          'Unable to check for conflicts due to a database error. Please try again.',
-      };
-    }
 
-    // If conflicts are found, return detailed error information
-    if (overlappingEvents.length > 0) {
-      const conflictDetails = overlappingEvents.map((event) => ({
+      conflicts = overlap.map((event) => ({
         title: event.title,
         timeRange: `${event.startTime} - ${event.endTime}`,
         dateRange: `${event.startDate.toLocaleDateString()} - ${event.endDate.toLocaleDateString()}`,
         location: event.location,
       }));
-
-      return {
-        success: false,
-        error: 'Location booking conflict',
-        conflicts: conflictDetails,
-        message: `Cannot create event "${title}" because the location "${location}" is already booked for ${overlappingEvents.length} conflicting event(s). Please choose a different time or location.`,
-        conflictCount: overlappingEvents.length,
-      };
+    } catch (dbError) {
+      console.error('Conflict warning query failed:', dbError);
+      // Soft failure: treat as no conflicts rather than blocking the create
     }
 
     // Attempt to create the event
@@ -578,10 +535,20 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
       });
 
       revalidatePath('/calendar');
+      revalidatePath('/admin', 'layout');
+      revalidatePath('/', 'layout');
+      updateTag('events');
 
       return {
         success: true,
         isApproved: isAdmin,
+        warnings:
+          conflicts.length > 0
+            ? {
+                message: `Heads up: ${conflicts.length} other event${conflicts.length === 1 ? '' : 's'} already booked "${location}" during this time. The event was created anyway.`,
+                conflicts,
+              }
+            : undefined,
       };
     } catch (dbError) {
       console.error('Database insertion failed:', dbError);
@@ -607,6 +574,11 @@ export async function updateEvent(
   values: Partial<z.infer<typeof createEventSchema>>,
 ) {
   try {
+    const realId = extractEventUuid(id);
+    if (!realId) {
+      throw new Error('Missing event id');
+    }
+
     const validatedFields = createEventSchema.partial().safeParse(values);
 
     if (!validatedFields.success) {
@@ -619,7 +591,7 @@ export async function updateEvent(
     const existingEvent = await db
       .select()
       .from(events)
-      .where(and(eq(events.id, id)))
+      .where(and(eq(events.id, realId)))
       .limit(1);
 
     if (!existingEvent.length) {
@@ -632,9 +604,12 @@ export async function updateEvent(
         ...validatedFields.data,
         updatedAt: new Date(),
       })
-      .where(and(eq(events.id, id)));
+      .where(and(eq(events.id, realId)));
 
     revalidatePath('/calendar');
+    revalidatePath('/admin', 'layout');
+    revalidatePath('/', 'layout');
+    updateTag('events');
     return { success: true };
   } catch (error) {
     console.error('Error updating event:', error);
@@ -674,10 +649,15 @@ async function deleteFlyerFile(flyerUrl: string | null): Promise<void> {
 
 export async function deleteEvent(id: string) {
   try {
+    const realId = extractEventUuid(id);
+    if (!realId) {
+      throw new Error('Missing event id');
+    }
+
     const existingEvent = await db
       .select()
       .from(events)
-      .where(and(eq(events.id, id)))
+      .where(and(eq(events.id, realId)))
       .limit(1);
 
     if (!existingEvent.length) {
@@ -685,9 +665,12 @@ export async function deleteEvent(id: string) {
     }
 
     await deleteFlyerFile(existingEvent[0].flyerUrl);
-    await db.delete(events).where(and(eq(events.id, id)));
+    await db.delete(events).where(and(eq(events.id, realId)));
 
     revalidatePath('/calendar');
+    revalidatePath('/admin', 'layout');
+    revalidatePath('/', 'layout');
+    updateTag('events');
     return { success: true };
   } catch (error) {
     console.error('Error deleting event:', error);
@@ -718,12 +701,20 @@ export async function getPendingEvents() {
 
 export async function approveEvent(id: string) {
   try {
+    const realId = extractEventUuid(id);
+    if (!realId) {
+      throw new Error('Missing event id');
+    }
+
     await db
       .update(events)
       .set({ isApproved: true, updatedAt: new Date() })
-      .where(eq(events.id, id));
+      .where(eq(events.id, realId));
 
     revalidatePath('/calendar');
+    revalidatePath('/admin', 'layout');
+    revalidatePath('/', 'layout');
+    updateTag('events');
     return { success: true };
   } catch (error) {
     console.error('Error approving event:', error);
@@ -736,16 +727,24 @@ export async function approveEvent(id: string) {
 
 export async function rejectEvent(id: string) {
   try {
+    const realId = extractEventUuid(id);
+    if (!realId) {
+      throw new Error('Missing event id');
+    }
+
     const existingEvent = await db
       .select({ flyerUrl: events.flyerUrl })
       .from(events)
-      .where(eq(events.id, id))
+      .where(eq(events.id, realId))
       .limit(1);
 
     await deleteFlyerFile(existingEvent[0]?.flyerUrl ?? null);
-    await db.delete(events).where(eq(events.id, id));
+    await db.delete(events).where(eq(events.id, realId));
 
     revalidatePath('/calendar');
+    revalidatePath('/admin', 'layout');
+    revalidatePath('/', 'layout');
+    updateTag('events');
     return { success: true };
   } catch (error) {
     console.error('Error rejecting event:', error);

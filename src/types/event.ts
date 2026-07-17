@@ -16,7 +16,7 @@ export interface Events {
   startTime: string;
   endTime: string;
   isRepeating: boolean;
-  repeatingType: 'daily' | 'weekly' | 'biweekly' | 'monthly' | null;
+  repeatingType: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly' | null;
   location: (typeof LOCATION_OPTIONS)[number];
   category: string;
   color: string;

@@ -14,6 +14,7 @@ const REPEAT_LABELS: Record<string, string> = {
   weekly: 'Weekly',
   biweekly: 'Bi-weekly',
   monthly: 'Monthly',
+  yearly: 'Yearly',
 };
 
 function DetailRow({
