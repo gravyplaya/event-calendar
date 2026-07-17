@@ -71,6 +71,7 @@ interface EventRow {
   id: string;
   title: string;
   startDate: Date;
+  endDate: Date;
   location: string;
 }
 
@@ -378,13 +379,23 @@ export default function SubscribersDashboard() {
                         No upcoming events found
                       </SelectItem>
                     ) : (
-                      availableEvents.map((event) => (
-                        <SelectItem key={event.id} value={event.id}>
-                          {event.title} —{' '}
-                          {new Date(event.startDate).toLocaleDateString()} @{' '}
-                          {event.location}
-                        </SelectItem>
-                      ))
+                      availableEvents.map((event) => {
+                        const start = new Date(event.startDate);
+                        const end = new Date(event.endDate);
+                        // Show "start - end" when the event spans more than
+                        // one calendar day; for a single-day event the start
+                        // label alone is enough.
+                        const isMultiDay =
+                          start.toDateString() !== end.toDateString();
+                        const dateLabel = isMultiDay
+                          ? `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`
+                          : start.toLocaleDateString();
+                        return (
+                          <SelectItem key={event.id} value={event.id}>
+                            {event.title} — {dateLabel} @ {event.location}
+                          </SelectItem>
+                        );
+                      })
                     )}
                   </SelectContent>
                 </Select>

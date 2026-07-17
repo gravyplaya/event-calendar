@@ -574,15 +574,20 @@ export async function getEventsForCheckIn() {
 
   try {
     const now = new Date();
+    // Multi-day events are bookable for check-in on every day of their run,
+    // not just before they start. Filter on endDate instead of startDate so
+    // a Jul 14 → Jul 20 event still appears on Jul 17 while it's actively
+    // running (otherwise staff couldn't generate today's QR code).
     const result = await db
       .select({
         id: events.id,
         title: events.title,
         startDate: events.startDate,
+        endDate: events.endDate,
         location: events.location,
       })
       .from(events)
-      .where(gte(events.startDate, now))
+      .where(gte(events.endDate, now))
       .orderBy(events.startDate)
       .limit(100)
       .execute();
