@@ -21,11 +21,11 @@ export default function Navbar() {
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/the-nest-logo-transparent.png"
+            src="/new-logo.jpg"
             alt="The Nest Muskegon"
             width={36}
             height={36}
-            className="h-9 w-9 rounded-full"
+            className="h-9 w-9 rounded-full object-cover"
             priority
           />
           <span className="text-xl font-semibold tracking-tight">The Nest</span>
