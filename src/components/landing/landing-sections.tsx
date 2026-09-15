@@ -565,11 +565,11 @@ export function LandingFooter() {
       <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
         <div className="flex items-center gap-3">
           <NextImage
-            src="/the-nest-logo-transparent.png"
+            src="/new-logo.jpg"
             alt="The Nest Muskegon"
             width={28}
             height={28}
-            className="h-7 w-7"
+            className="h-7 w-7 rounded-full object-cover"
           />
           <p className="text-muted-foreground text-sm">
             &copy; 2025 The Nest Restaurant and Nightclub. All rights reserved.

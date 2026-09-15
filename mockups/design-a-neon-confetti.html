@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Nest — Redesign Mockup A: "Neon Confetti" (Three.js scroll)</title>
+<style>
+  :root {
+    --ink: #0b0b0f;
+    --paper: #f4f1ea;
+    --rainbow: linear-gradient(90deg, #e40303, #ff8c00, #ffed00, #008026, #004dff, #732982);
+    --accent: #ff2d78;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: var(--ink);
+    color: #f5f5f7;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--accent); color: #fff; }
+
+  #webgl { position: fixed; inset: 0; z-index: 0; }
+
+  .grain::after {
+    content: ""; position: fixed; inset: -200%; z-index: 2; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: .05; animation: grain 8s steps(10) infinite;
+  }
+  @keyframes grain { 0%,100%{transform:translate(0,0)} 10%{transform:translate(-5%,-5%)} 30%{transform:translate(3%,-3%)} 50%{transform:translate(-3%,3%)} 70%{transform:translate(5%,5%)} 90%{transform:translate(-5%,3%)} }
+
+  main { position: relative; z-index: 3; }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.9rem 4vw;
+  }
+  nav .logo { display: flex; align-items: center; gap: .75rem; font-weight: 800; letter-spacing: -.02em; font-size: 1.05rem; color: #f5f5f7; text-decoration: none; }
+  nav .logo img {
+    width: 2.6rem; height: 2.6rem; border-radius: 50%; object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.15), 0 0 24px rgba(255,255,255,.08);
+  }
+  nav .links { display: flex; gap: 2rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .12em; color: #f5f5f7; }
+  nav a { color: inherit; text-decoration: none; }
+
+  .progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--rainbow); z-index: 60; }
+
+  /* ── Hero ── */
+  .hero {
+    min-height: 100svh; display: flex; flex-direction: column; justify-content: center;
+    padding: 0 4vw; position: relative;
+  }
+  .kicker {
+    display: inline-flex; align-items: center; gap: .6rem;
+    font-size: .75rem; text-transform: uppercase; letter-spacing: .2em;
+    color: #9a9aa5; margin-bottom: 1.4rem;
+  }
+  .kicker::before { content: ""; width: 2.4rem; height: 1px; background: #9a9aa5; }
+  h1 {
+    font-size: clamp(3rem, 11vw, 10rem); line-height: .92; font-weight: 800;
+    letter-spacing: -.04em; text-transform: uppercase;
+  }
+  h1 .line { display: block; overflow: hidden; }
+  h1 .line span { display: inline-block; transform: translateY(110%); animation: rise 1s cubic-bezier(.16,1,.3,1) forwards; }
+  h1 .line:nth-child(2) span { animation-delay: .1s; }
+  h1 .line:nth-child(3) span { animation-delay: .2s; }
+  @keyframes rise { to { transform: translateY(0); } }
+  h1 .outline {
+    color: transparent; -webkit-text-stroke: 1.5px #f5f5f7;
+  }
+  .hero .sub {
+    margin-top: 2rem; max-width: 34ch; font-size: 1.05rem; color: #b9b9c3; font-weight: 300;
+    opacity: 0; animation: fade 1s .6s forwards;
+  }
+  .hero .cta-row { display: flex; gap: 1rem; margin-top: 2.6rem; opacity: 0; animation: fade 1s .8s forwards; }
+  .btn {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .9rem 1.8rem; border-radius: 999px; font-weight: 600; font-size: .95rem;
+    text-decoration: none; transition: transform .3s, background .3s;
+  }
+  .btn.solid { background: #f5f5f7; color: #0b0b0f; }
+  .btn.solid:hover { transform: translateY(-2px); background: #fff; }
+  .btn.ghost { border: 1px solid rgba(255,255,255,.25); color: #f5f5f7; }
+  .btn.ghost:hover { border-color: #f5f5f7; transform: translateY(-2px); }
+  .arrow { transition: transform .3s; }
+  .btn:hover .arrow { transform: translateX(4px); }
+
+  .hero .live-badge {
+    position: absolute; bottom: 4vh; left: 4vw;
+    display: inline-flex; align-items: center; gap: .55rem;
+    font-size: .8rem; color: #9a9aa5;
+    padding: .5rem 1rem; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(8px);
+    opacity: 0; animation: fade 1s 1s forwards;
+    transition: border-color .3s, color .3s;
+  }
+  .hero .live-badge:hover { border-color: rgba(255,255,255,.4); color: #f5f5f7; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 12px #4ade80; animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: .4; } }
+  @keyframes fade { to { opacity: 1; } }
+
+  /* ── Section scaffolding ── */
+  section { padding: 9vh 4vw; position: relative; }
+  .sec-head { display: flex; align-items: baseline; gap: 1.5rem; margin-bottom: 4rem; }
+  .sec-num { font-size: .75rem; color: #666; letter-spacing: .2em; }
+  h2 {
+    font-size: clamp(2.2rem, 6vw, 5.5rem); font-weight: 800; letter-spacing: -.03em;
+    text-transform: uppercase; line-height: .95;
+  }
+
+  .reveal { opacity: 0; transform: translateY(60px); transition: all 1s cubic-bezier(.16,1,.3,1); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  /* ── Marquee ── */
+  .marquee { padding: 2vh 0; border-top: 1px solid rgba(255,255,255,.08); border-bottom: 1px solid rgba(255,255,255,.08); overflow: hidden; position: relative; z-index: 3; }
+  .marquee-inner { display: flex; width: max-content; animation: scroll 22s linear infinite; }
+  .marquee span {
+    font-size: clamp(2rem, 5vw, 4.5rem); font-weight: 800; text-transform: uppercase;
+    letter-spacing: -.02em; white-space: nowrap; padding-right: 2.5rem;
+    -webkit-text-stroke: 1px rgba(255,255,255,.35); color: transparent;
+  }
+  .marquee span:nth-child(even) { color: #f5f5f7; -webkit-text-stroke: 0; font-style: italic; }
+  @keyframes scroll { to { transform: translateX(-50%); } }
+
+  /* ── Floors / split ── */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+  .floor {
+    padding: 5rem 3rem; border: 1px solid rgba(255,255,255,.08);
+    position: relative; overflow: hidden; transition: background .5s;
+    min-height: 55vh; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .floor:hover { background: rgba(255,255,255,.03); }
+  .floor .tag { font-size: .7rem; text-transform: uppercase; letter-spacing: .25em; color: #888; }
+  .floor h3 { font-size: clamp(1.6rem, 3vw, 2.6rem); font-weight: 700; margin: 1rem 0; letter-spacing: -.02em; }
+  .floor p { color: #a5a5b0; max-width: 42ch; line-height: 1.7; font-weight: 300; }
+  .floor .num { font-size: 7rem; font-weight: 800; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.18); line-height: 1; }
+  .floor .corner-link { margin-top: 2.5rem; display: inline-flex; align-items: center; gap: .5rem; color: #f5f5f7; text-decoration: none; font-weight: 600; }
+  .floor .corner-link::after { content: "→"; transition: transform .3s; }
+  .floor:hover .corner-link::after { transform: translateX(6px); }
+
+  /* ── Events ticker ── */
+  .event-row {
+    display: grid; grid-template-columns: 90px 1fr auto; gap: 2rem; align-items: center;
+    padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,.08);
+    transition: background .3s, padding .3s; cursor: pointer;
+  }
+  .event-row:hover { background: rgba(255,255,255,.04); padding-left: 2.5rem; }
+  .event-date { font-weight: 800; font-size: 1.3rem; letter-spacing: -.02em; }
+  .event-date small { display: block; font-weight: 400; font-size: .7rem; color: #888; text-transform: uppercase; letter-spacing: .15em; }
+  .event-title { font-size: 1.15rem; font-weight: 600; }
+  .event-meta { color: #888; font-size: .85rem; }
+  .pill { padding: .35rem .9rem; border: 1px solid rgba(255,255,255,.15); border-radius: 999px; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; }
+  .pill.live { border-color: #4ade80; color: #4ade80; }
+
+  /* ── FAQ ── */
+  .faq { border-top: 1px solid rgba(255,255,255,.08); }
+  .faq details { border-bottom: 1px solid rgba(255,255,255,.08); }
+  .faq summary {
+    padding: 1.8rem 0; cursor: pointer; list-style: none;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 1.15rem; font-weight: 600; transition: color .3s;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary:hover { color: var(--accent); }
+  .faq summary::after { content: "+"; font-weight: 400; font-size: 1.4rem; transition: transform .3s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details p { padding: 0 0 1.8rem; color: #a5a5b0; max-width: 60ch; line-height: 1.7; font-weight: 300; }
+
+  /* ── Visit ── */
+  .visit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; }
+  .hours-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,.08); color: #a5a5b0; }
+  .hours-row b { color: #f5f5f7; font-weight: 600; }
+
+  footer { padding: 10vh 4vw 5vh; position: relative; z-index: 3; border-top: 1px solid rgba(255,255,255,.08); }
+  .foot-hero { display: flex; align-items: center; justify-content: space-between; gap: 3rem; flex-wrap: wrap; }
+  .foot-big { font-size: clamp(3rem, 14vw, 13rem); font-weight: 800; letter-spacing: -.04em; line-height: .9; text-transform: uppercase; }
+  .foot-big em { font-style: italic; -webkit-text-stroke: 1.5px #f5f5f7; color: transparent; }
+  .foot-logo { flex-shrink: 0; }
+  .foot-logo img {
+    width: clamp(6rem, 12vw, 10rem); height: auto; aspect-ratio: 1; border-radius: 50%; object-fit: cover;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 0 60px rgba(255,255,255,.06);
+    transition: transform .5s cubic-bezier(.16,1,.3,1);
+  }
+  .foot-logo img:hover { transform: rotate(8deg) scale(1.04); }
+  .foot-row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 4rem; color: #666; font-size: .85rem; }
+
+  @media (max-width: 800px) {
+    .split, .visit-grid { grid-template-columns: 1fr; }
+    nav .links { display: none; }
+    .event-row { grid-template-columns: 60px 1fr; }
+    .event-row .pill { display: none; }
+  }
+</style>
+</head>
+<body class="grain">
+<canvas id="webgl"></canvas>
+<div class="progress" id="progress"></div>
+
+<nav>
+  <a class="logo" href="#"><img src="new-logo.jpg" alt="The Nest logo" />THE NEST</a>
+  <div class="links"><a href="#events">Events</a><a href="#visit">Visit</a><a href="#faq">FAQ</a></div>
+</nav>
+
+<main>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="kicker">333 W. Western Ave · Downtown Muskegon</div>
+    <h1>
+      <span class="line"><span>COME AS</span></span>
+      <span class="line"><span class="outline">YOU ARE.</span></span>
+      <span class="line"><span>STAY FOR</span></span>
+      <span class="line"><span class="outline">THE VIBE.</span></span>
+    </h1>
+    <p class="sub">An urban, all-inclusive gathering place. Good food, cold drinks, live entertainment — dinner upstairs, the night downstairs.</p>
+    <div class="cta-row">
+      <a class="btn solid" href="#events">View events <span class="arrow">→</span></a>
+      <a class="btn ghost" href="#">See the menu</a>
+    </div>
+    <a class="live-badge" id="live-badge" href="#events" style="text-decoration:none;color:inherit;"><span class="dot"></span> <span id="live-badge-text">…</span></a>
+  </div>
+
+  <!-- MARQUEE -->
+  <div class="marquee">
+    <div class="marquee-inner">
+      <span>DINNER</span><span>DRINKS</span><span>LIVE MUSIC</span><span>DJ NIGHTS</span><span>SPEAKEASY</span>
+      <span>DINNER</span><span>DRINKS</span><span>LIVE MUSIC</span><span>DJ NIGHTS</span><span>SPEAKEASY</span>
+    </div>
+  </div>
+
+  <!-- FLOORS -->
+  <section id="floors">
+    <div class="sec-head reveal"><span class="sec-num">01</span><h2>Two floors.<br>Two vibes.</h2></div>
+    <div class="split">
+      <div class="floor reveal">
+        <div class="num">01</div>
+        <div>
+          <div class="tag">Main Floor</div>
+          <h3>The Restaurant &amp; Bar</h3>
+          <p>Full kitchen, full bar, and a room that opens up to the street. Pull up a chair for dinner, grab a drink at the bar, or host your next get-together.</p>
+        </div>
+      </div>
+      <div class="floor reveal">
+        <div class="num">02</div>
+        <div>
+          <div class="tag">Downstairs</div>
+          <h3>The Basement Speakeasy</h3>
+          <p>A hidden room below the restaurant. Intimate, dimly lit, and made for private events, live music, and late nights. Bring the right people.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section id="events">
+    <div class="sec-head reveal"><span class="sec-num">02</span><h2>What's on<br><span id="events-month-label" style="font-style:italic;-webkit-text-stroke:1px #f5f5f7;color:transparent;">this month.</span></h2></div>
+    <div class="reveal" id="event-list">
+      <div class="event-row" id="events-loading"><div class="event-date">···<small>loading</small></div><div><div class="event-title">Checking the calendar…</div></div></div>
+    </div>
+    <p style="margin-top:2rem;color:#666;font-size:.8rem;" class="reveal"><a href="#events" id="all-events-link" style="color:#999;">See all events on the calendar →</a></p>
+  </section>
+
+  <!-- FAQ + VISIT -->
+  <section id="faq">
+    <div class="sec-head reveal"><span class="sec-num">03</span><h2>Before you<br>walk in.</h2></div>
+    <div class="visit-grid">
+      <div class="faq reveal">
+        <details><summary>Do I need a reservation?</summary><p>Walk-ins are always welcome. For larger groups or busy nights — weekends, live music, events — reach out ahead so we can save you a spot.</p></details>
+        <details><summary>Is The Nest a gay bar?</summary><p>The Nest is an all-inclusive restaurant and nightclub — which means everyone is welcome, and we mean it. The vibe is inclusive, the drinks are good, and the kitchen is open.</p></details>
+        <details><summary>Can I book a private event?</summary><p>Absolutely. Submit an event through the calendar with your date and details and we'll reach out to plan it with you.</p></details>
+        <details><summary>Is there parking nearby?</summary><p>Street parking on Western Ave and surrounding streets, plus public lots within a short walk.</p></details>
+      </div>
+      <div id="visit" class="reveal">
+        <div class="tag" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.25em;color:#888;">Find us</div>
+        <h3 style="font-size:1.8rem;font-weight:700;margin:1rem 0;">333 W. Western Ave, Suite B<br>Muskegon, MI 49440</h3>
+        <div class="hours-row"><span>Wednesday – Thursday</span><b>3 PM – 10 PM</b></div>
+        <div class="hours-row"><span>Friday</span><b>3 PM – 12 AM</b></div>
+        <div class="hours-row"><span>Saturday</span><b>1 PM – 12 AM</b></div>
+        <div class="hours-row"><span>Sunday</span><b>1 PM – 10 PM</b></div>
+        <div class="hours-row"><span>Monday – Tuesday</span><b>Closed</b></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-hero">
+    <div class="foot-big">THE <em>NEST</em></div>
+    <a class="foot-logo" href="#" aria-label="The Nest home"><img src="new-logo.jpg" alt="The Nest logo" /></a>
+  </div>
+  <div class="foot-row">
+    <span>© 2025 The Nest Restaurant &amp; Nightclub</span>
+    <span><a href="https://www.instagram.com/thenestmkg" target="_blank" rel="noopener noreferrer" style="color:#999;text-decoration:none;">Instagram</a> · <a href="https://www.facebook.com/profile.php?id=61572132644613" target="_blank" rel="noopener noreferrer" style="color:#999;text-decoration:none;">Facebook</a></span>
+    <span>Muskegon, MI</span>
+  </div>
+</footer>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js';
+
+const canvas = document.getElementById('webgl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+camera.position.z = 14;
+
+const totalScrollHeight = Math.max(document.body.scrollHeight - innerHeight, 1);
+const cameraJourney = 60; // world units to travel
+
+const RAINBOW = [0xe40303, 0xff8c00, 0xffed00, 0x008026, 0x004dff, 0x732982];
+
+// ── Background: big flowing torus (the "nest") ──
+const torusMat = new THREE.MeshStandardMaterial({
+  color: 0x111116, roughness: 0.25, metalness: 0.9, wireframe: false,
+});
+const torus = new THREE.Mesh(new THREE.TorusKnotGeometry(6, 1.6, 220, 36), torusMat);
+scene.add(torus);
+
+// rim light tinted by scroll position
+const keyLight = new THREE.PointLight(0xffffff, 260, 90);
+keyLight.position.set(10, 8, 14);
+scene.add(keyLight);
+const rimA = new THREE.PointLight(RAINBOW[0], 200, 70);
+rimA.position.set(-12, -6, -8);
+scene.add(rimA);
+const rimB = new THREE.PointLight(RAINBOW[4], 200, 70);
+rimB.position.set(12, -6, -6);
+scene.add(rimB);
+
+// ── Foreground: confetti particles ──
+const COUNT = 900;
+const positions = new Float32Array(COUNT * 3);
+const colors = new Float32Array(COUNT * 3);
+const sizes = new Float32Array(COUNT);
+const color = new THREE.Color();
+for (let i = 0; i < COUNT; i++) {
+  positions[i * 3] = (Math.random() - 0.5) * 42;
+  positions[i * 3 + 1] = (Math.random() - 0.5) * 70;
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 26;
+  color.setHex(RAINBOW[i % RAINBOW.length]);
+  colors[i * 3] = color.r; colors[i * 3 + 1] = color.g; colors[i * 3 + 2] = color.b;
+  sizes[i] = Math.random() * 0.22 + 0.04;
+}
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+pGeo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+pGeo.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+
+const pMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: `
+    attribute vec3 aColor; attribute float aSize;
+    varying vec3 vColor;
+    void main() {
+      vColor = aColor;
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = aSize * 320.0 / -mv.z;
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    varying vec3 vColor;
+    void main() {
+      float d = distance(gl_PointCoord, vec2(0.5));
+      float a = smoothstep(0.5, 0.0, d);
+      gl_FragColor = vec4(vColor, a * 0.9);
+    }`
+});
+const confetti = new THREE.Points(pGeo, pMat);
+scene.add(confetti);
+
+// ── Scroll state ──
+let scrollY = 0, smoothScroll = 0;
+addEventListener('scroll', () => { scrollY = window.scrollY; }, { passive: true });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+const clock = new THREE.Clock();
+const rainbowHex = RAINBOW.map(h => new THREE.Color(h));
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  const dt = Math.min(clock.getDelta(), 0.05);
+
+  smoothScroll = lerp(smoothScroll, scrollY, 0.06);
+  const p = Math.min(smoothScroll / totalScrollHeight, 1); // 0 → 1 down the page
+
+  // camera descends through the scene as you scroll
+  camera.position.y = lerp(4, -cameraJourney, p);
+  camera.position.x = Math.sin(p * Math.PI * 2) * 3.5;
+  camera.lookAt(0, camera.position.y - 6, 0);
+
+  // torus slowly rotates + scrolls past
+  torus.rotation.x = t * 0.12 + p * Math.PI * 1.5;
+  torus.rotation.y = t * 0.16;
+  torus.position.y = lerp(2, -cameraJourney * 0.55, p);
+
+  // lights cycle through rainbow as you scroll
+  const idxF = p * RAINBOW.length;
+  const i0 = Math.floor(idxF) % RAINBOW.length;
+  const i1 = (i0 + 1) % RAINBOW.length;
+  rimA.color.lerpColors(rainbowHex[i0], rainbowHex[i1], idxF - Math.floor(idxF));
+  rimB.color.copy(rimA.color).offsetHSL(0.33, 0, 0);
+
+  // confetti drift
+  confetti.rotation.y = t * 0.03 + p * 1.2;
+  confetti.position.y = p * -18;
+
+  // gentle mouse parallax
+  camera.rotation.z = Math.sin(t * 0.3) * 0.02 + (mouseX * 0.03);
+
+  renderer.render(scene, camera);
+}
+
+let mouseX = 0;
+addEventListener('mousemove', (e) => { mouseX = (e.clientX / innerWidth - 0.5) * 2; });
+
+animate();
+
+// ── Scroll progress bar ──
+const bar = document.getElementById('progress');
+addEventListener('scroll', () => {
+  bar.style.width = (window.scrollY / totalScrollHeight * 100) + '%';
+}, { passive: true });
+
+// ── Reveal on scroll ──
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// ── Live events from the calendar API ──
+const EVENTS_API = 'http://localhost:3001/api/events?limit=8';
+const CAL_URL = 'http://localhost:3001/calendar';
+
+const DAYS = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const LOCATION_LABELS = {
+  'Restaurant/Bar': 'Main Floor',
+  'Basement Speakeasy': 'Speakeasy',
+  'Both': 'Both Floors',
+};
+
+function fmtTime(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hr = h % 12 || 12;
+  return m ? `${hr}:${String(m).padStart(2,'0')} ${ampm}` : `${hr} ${ampm}`;
+}
+
+function eventRow(ev) {
+  const d = new Date(ev.startDate);
+  const date = `${DAYS[d.getDay()]}<small>${MONTHS[d.getMonth()]} ${d.getDate()}</small>`;
+  const loc = LOCATION_LABELS[ev.location] ?? ev.location;
+  const meta = `${loc} · ${fmtTime(ev.startTime)} – ${fmtTime(ev.endTime)}`;
+  const isToday = new Date(ev.startDate).toDateString() === new Date().toDateString();
+  return `<a class="event-row" href="${CAL_URL}">
+    <div class="event-date">${date}</div>
+    <div><div class="event-title">${escapeHtml(ev.title)}</div><div class="event-meta">${meta}</div></div>
+    <span class="pill ${isToday ? 'live' : ''}">${isToday ? 'Tonight' : 'View'}</span>
+  </a>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Events happening "tonight" = any event whose schedule overlaps today
+function updateLiveBadge(events) {
+  const badge = document.getElementById('live-badge');
+  const text = document.getElementById('live-badge-text');
+  if (!badge || !text) return;
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(startOfToday);
+  endOfToday.setDate(endOfToday.getDate() + 1);
+
+  const tonight = events.filter(ev => {
+    const start = new Date(ev.startDate);
+    const end = new Date(ev.endDate);
+    return start < endOfToday && end > startOfToday;
+  }).length;
+
+  if (tonight > 0) {
+    text.textContent = `${tonight} event${tonight > 1 ? 's' : ''} happening tonight`;
+  } else {
+    text.textContent = 'See what\u2019s on this month';
+  }
+}
+
+async function loadEvents() {
+  const list = document.getElementById('event-list');
+  const link = document.getElementById('all-events-link');
+  link.href = CAL_URL;
+  try {
+    const res = await fetch(EVENTS_API);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.month) {
+      const label = document.getElementById('events-month-label');
+      if (label) label.textContent = `${MONTHS[new Date(data.month).getMonth()]}.`;
+    }
+    updateLiveBadge(data.events || []);
+    if (!data.events?.length) {
+      list.innerHTML = `<div class="event-row"><div class="event-date">—</div><div><div class="event-title">Nothing on the books right now</div><div class="event-meta">Check back soon — new events land here first.</div></div></div>`;
+      return;
+    }
+    list.innerHTML = data.events.map(eventRow).join('');
+    // re-observe in case rows appeared below the fold
+    list.querySelectorAll('.event-row').forEach(() => {});
+  } catch (err) {
+    console.warn('Calendar API unavailable, showing placeholder:', err);
+    list.innerHTML = `<div class="event-row"><div class="event-date">···</div><div><div class="event-title">Calendar is warming up</div><div class="event-meta">Refresh in a moment to see what's on.</div></div></div>`;
+  }
+}
+loadEvents();
+</script>
+</body>
+</html>
