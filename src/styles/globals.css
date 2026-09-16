@@ -452,8 +452,8 @@ body {
 
 /* Hero */
 .landing-hero-h1 {
-  font-size: clamp(3rem, 11vw, 10rem);
-  line-height: 0.92;
+  font-size: clamp(2.6rem, 8vw, 6.5rem);
+  line-height: 0.95;
   font-weight: 800;
   letter-spacing: -0.04em;
   text-transform: uppercase;

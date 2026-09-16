@@ -89,7 +89,7 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
   return (
     <div
       ref={containerRef}
-      className="landing-dark px-4vw relative flex min-h-svh flex-col justify-center overflow-hidden py-24"
+      className="landing-dark px-4vw relative flex min-h-svh flex-col justify-center overflow-hidden py-16 md:py-20"
     >
       {/* Background: interior photo (from the previous design), parallax +
           darkened so the Three.js scene and type stay legible */}
