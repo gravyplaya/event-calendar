@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import { useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -70,6 +70,15 @@ function Reveal({
 
 // ── Hero ──
 export function NewHero({ tonightCount }: { tonightCount: number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end start'],
+  });
+
+  const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
+  const bgOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+
   const lines = [
     { text: 'COME AS', outline: false },
     { text: 'YOU ARE.', outline: true },
@@ -78,8 +87,27 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
   ];
 
   return (
-    <div className="landing-dark px-4vw relative flex min-h-svh flex-col justify-center py-24">
-      <div className="flex items-center gap-4 text-xs tracking-[0.2em] text-white/50 uppercase">
+    <div
+      ref={containerRef}
+      className="landing-dark px-4vw relative flex min-h-svh flex-col justify-center overflow-hidden py-24"
+    >
+      {/* Background: interior photo (from the previous design), parallax +
+          darkened so the Three.js scene and type stay legible */}
+      <motion.div
+        className="absolute inset-0"
+        style={{ y: bgY, opacity: bgOpacity }}
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: 'url(/inside.jpg)',
+            filter: 'brightness(0.3) contrast(1.1) saturate(0.6)',
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/40 to-black/80" />
+      </motion.div>
+
+      <div className="relative flex items-center gap-4 text-xs tracking-[0.2em] text-white/50 uppercase">
         <span className="h-px w-10 bg-white/50" />
         333 W. Western Ave · Downtown Muskegon
       </div>
