@@ -114,36 +114,17 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
       <h1 className="landing-hero-h1 mt-6">
         {lines.map((line, i) => (
           <span key={i} className="block overflow-hidden">
-            <motion.span
-              className={`block ${line.outline ? 'text-outline' : ''}`}
-              initial={{ y: '110%' }}
-              animate={{ y: 0 }}
-              transition={{
-                duration: 1,
-                ease: [0.16, 1, 0.3, 1],
-                delay: i * 0.1,
-              }}
-            >
+            <span className={`block ${line.outline ? 'text-outline' : ''}`}>
               {line.text}
-            </motion.span>
+            </span>
           </span>
         ))}
       </h1>
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 0.6 }}
-        className="mt-8 max-w-prose text-lg font-light text-white/70"
-      >
+      <p className="mt-8 max-w-prose text-lg font-light text-white/70">
         An urban, all-inclusive gathering place. Good food, cold drinks, live
         entertainment — dinner upstairs, the night downstairs.
-      </motion.p>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 0.8 }}
-        className="mt-10 flex flex-wrap gap-4"
-      >
+      </p>
+      <div className="mt-10 flex flex-wrap gap-4">
         <Link
           href="#events"
           className="landing-pill-btn landing-pill-btn-solid"
@@ -153,21 +134,16 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
         <Link href="/menu" className="landing-pill-btn">
           See the menu
         </Link>
-      </motion.div>
+      </div>
       {tonightCount >= 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 1 }}
-          className="left-4vw absolute bottom-8"
-        >
+        <div className="left-4vw absolute bottom-8">
           <Link href="#events" className="landing-live-badge">
             <span className="landing-pulse-dot" />
             {tonightCount > 0
               ? `${tonightCount} event${tonightCount > 1 ? 's' : ''} happening tonight`
               : 'See what\u2019s on this month'}
           </Link>
-        </motion.div>
+        </div>
       )}
     </div>
   );
