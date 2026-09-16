@@ -414,3 +414,390 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
+
+/* ════════════════════════════════════════════════════════════
+   NEW LANDING — editorial / Three.js scroll redesign
+   ════════════════════════════════════════════════════════════ */
+
+.landing-dark {
+  background: #0b0b0f;
+  color: #f5f5f7;
+}
+
+/* Outlined display text */
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px #f5f5f7;
+}
+
+.text-outline-italic {
+  color: transparent;
+  -webkit-text-stroke: 1px #f5f5f7;
+  font-style: italic;
+}
+
+.text-outline-faint {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.18);
+}
+
+/* Hero */
+.landing-hero-h1 {
+  font-size: clamp(3rem, 11vw, 10rem);
+  line-height: 0.92;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.px-4vw {
+  padding-left: 4vw;
+  padding-right: 4vw;
+}
+
+.left-4vw {
+  left: 4vw;
+}
+
+/* Pill buttons */
+.landing-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.8rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #f5f5f7;
+  transition:
+    transform 0.3s,
+    background 0.3s,
+    border-color 0.3s;
+}
+
+.landing-pill-btn:hover {
+  transform: translateY(-2px);
+  border-color: #f5f5f7;
+}
+
+.landing-pill-btn-solid {
+  background: #f5f5f7;
+  color: #0b0b0f;
+  border-color: #f5f5f7;
+}
+
+.landing-pill-btn-solid:hover {
+  background: #fff;
+}
+
+/* Live badge in hero */
+.landing-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.8rem;
+  color: #9a9aa5;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    border-color 0.3s,
+    color 0.3s;
+}
+
+.landing-live-badge:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #f5f5f7;
+}
+
+.landing-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 12px #4ade80;
+  animation: landing-pulse 2s infinite;
+}
+
+@keyframes landing-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Grain overlay (fixed, over everything except content) */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 8s steps(10) infinite;
+}
+
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-5%, -5%);
+  }
+  30% {
+    transform: translate(3%, -3%);
+  }
+  50% {
+    transform: translate(-3%, 3%);
+  }
+  70% {
+    transform: translate(5%, 5%);
+  }
+  90% {
+    transform: translate(-5%, 3%);
+  }
+}
+
+/* Rainbow scroll progress bar */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  z-index: 60;
+  background: linear-gradient(
+    90deg,
+    #e40303,
+    #ff8c00,
+    #ffed00,
+    #008026,
+    #004dff,
+    #732982
+  );
+}
+
+/* Marquee */
+.landing-marquee {
+  padding: 2vh 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.landing-marquee-inner {
+  display: flex;
+  width: max-content;
+  animation: landing-marquee-scroll 22s linear infinite;
+}
+
+.landing-marquee-inner span {
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  padding-right: 2.5rem;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.35);
+  color: transparent;
+}
+
+.landing-marquee-inner span:nth-child(even) {
+  color: #f5f5f7;
+  -webkit-text-stroke: 0;
+  font-style: italic;
+}
+
+@keyframes landing-marquee-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Section scaffolding */
+.landing-section {
+  padding: 9vh 4vw;
+  position: relative;
+}
+
+.landing-h2 {
+  font-size: clamp(2.2rem, 6vw, 5.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  line-height: 0.95;
+}
+
+.landing-body {
+  color: #a5a5b0;
+  max-width: 42ch;
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+/* Floor cards */
+.landing-floor-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4rem 3rem;
+  min-height: 45vh;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: background 0.5s;
+}
+
+.landing-floor-card:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Event rows */
+.landing-event-row {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  gap: 2rem;
+  align-items: center;
+  padding: 2rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    background 0.3s,
+    padding 0.3s;
+  color: inherit;
+}
+
+.landing-event-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  padding-left: 2.5rem;
+}
+
+.landing-event-meta {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.landing-pill {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.landing-pill-live {
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+/* FAQ */
+.landing-faq-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.landing-faq-item summary {
+  padding: 1.8rem 0;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.landing-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.landing-faq-item summary:hover {
+  color: #ff2d78;
+}
+
+.landing-faq-item summary::after {
+  content: '+';
+  font-weight: 400;
+  font-size: 1.4rem;
+  transition: transform 0.3s;
+}
+
+.landing-faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.landing-faq-item p {
+  padding: 0 0 1.8rem;
+  color: #a5a5b0;
+  max-width: 60ch;
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+/* Hours */
+.landing-hours-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a5a5b0;
+}
+
+.landing-hours-row b {
+  color: #f5f5f7;
+  font-weight: 600;
+}
+
+/* Footer */
+.landing-footer {
+  padding: 10vh 4vw 5vh;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.landing-foot-big {
+  font-size: clamp(3rem, 14vw, 13rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.landing-foot-logo {
+  display: block;
+  flex-shrink: 0;
+  width: clamp(6rem, 12vw, 10rem);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 0 60px rgba(255, 255, 255, 0.06);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-foot-logo:hover {
+  transform: rotate(8deg) scale(1.04);
+}
+
+/* Scroll behavior for the new landing */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (max-width: 800px) {
+  .landing-event-row {
+    grid-template-columns: 60px 1fr;
+  }
+
+  .landing-event-row .landing-pill {
+    display: none;
+  }
+
+  .landing-floor-card {
+    padding: 3rem 2rem;
+    min-height: 0;
+  }
+}

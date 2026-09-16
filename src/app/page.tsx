@@ -1,62 +1,84 @@
 import { getEvents } from '@/app/actions';
 import { CalendarViewType } from '@/types/event';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import Navbar from '@/components/navbar';
-import { HeroSection } from '@/components/landing/hero-section';
+import { ScrollScene } from '@/components/landing/scroll-scene';
 import {
-  TwoFloorsSection,
-  WhatToExpectSection,
-  FindUsSection,
-  FAQSection,
-  LandingFooter,
-} from '@/components/landing/landing-sections';
-import { LoyaltySignup } from '@/components/landing/loyalty-signup';
+  NewHero,
+  NewMarquee,
+  NewFloorsSection,
+  NewEventsSection,
+  NewFaqVisitSection,
+  NewFooter,
+} from '@/components/landing/new-landing';
+import type { Events } from '@/types/event';
+
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 
 export default async function IndexPage() {
-  const today = new Date();
-  const startOfToday = startOfDay(today);
-  const endOfToday = endOfDay(today);
+  const now = new Date();
 
   const eventsResult = await getEvents({
-    date: today,
-    view: CalendarViewType.DAY,
+    date: now,
+    view: CalendarViewType.MONTH,
     categories: [],
     colors: [],
     locations: [],
     repeatingTypes: [],
   });
 
-  const todayEvents = eventsResult.success
-    ? eventsResult.events.filter((event) => {
-        const eventStart = new Date(event.startDate);
-        const eventEnd = new Date(event.endDate);
+  const monthStart = startOfMonth(now);
+  const monthEnd = endOfMonth(now);
 
-        return (
-          (eventStart >= startOfToday && eventStart <= endOfToday) ||
-          (eventEnd >= startOfToday && eventEnd <= endOfToday) ||
-          (eventStart <= startOfToday && eventEnd >= endOfToday)
-        );
-      })
+  const monthEvents: Events[] = eventsResult.success
+    ? eventsResult.events
+        .filter((event) => {
+          const start = new Date(event.startDate);
+          return start >= monthStart && start <= monthEnd;
+        })
+        .sort(
+          (a, b) =>
+            new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+        )
     : [];
 
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(startOfToday);
+  endOfToday.setDate(endOfToday.getDate() + 1);
+
+  const tonightCount = monthEvents.filter((event) => {
+    const start = new Date(event.startDate);
+    const end = new Date(event.endDate);
+    return start < endOfToday && end > startOfToday;
+  }).length;
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="landing-dark relative min-h-screen bg-[#0b0b0f] text-[#f5f5f7]">
+      <ScrollScene />
+      <div className="grain-overlay" aria-hidden="true" />
       <Navbar />
-      <main className="flex-1">
-        <HeroSection todayEvents={todayEvents} today={today} />
-        <WhatToExpectSection />
-        <section className="relative py-20 md:py-28">
-          <div className="container">
-            <div className="grid gap-8 lg:grid-cols-2">
-              <FAQSection embedded />
-              <LoyaltySignup embedded />
-            </div>
-          </div>
-        </section>
-        <FindUsSection />
-        <TwoFloorsSection />
+      <main className="relative">
+        <NewHero tonightCount={tonightCount} />
+        <NewMarquee />
+        <NewFloorsSection />
+        <NewEventsSection events={monthEvents} month={MONTHS[now.getMonth()]} />
+        <NewFaqVisitSection />
       </main>
-      <LandingFooter />
+      <NewFooter />
     </div>
   );
 }
