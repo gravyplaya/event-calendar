@@ -182,7 +182,7 @@ function SectionHeading({
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
   return (
-    <div ref={ref} className="mb-10 flex items-baseline gap-6">
+    <div ref={ref} className="mb-10">
       <span className="text-xs tracking-[0.2em] text-white/30">{num}</span>
       <motion.h2
         initial={{ opacity: 0, y: 30 }}
