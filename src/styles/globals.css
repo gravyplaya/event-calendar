@@ -416,7 +416,7 @@ body {
 }
 
 /* ════════════════════════════════════════════════════════════
-   NEW LANDING — editorial / Three.js scroll redesign
+   NEW LANDING — editorial / Three.js scroll redesign (black & gold)
    ════════════════════════════════════════════════════════════ */
 
 .landing-dark {
@@ -424,21 +424,30 @@ body {
   color: #f5f5f7;
 }
 
+/* Gold accent */
+.text-gold {
+  color: #d4af37;
+}
+
+.bg-gold {
+  background-color: #d4af37;
+}
+
 /* Outlined display text */
 .text-outline {
   color: transparent;
-  -webkit-text-stroke: 1.5px #f5f5f7;
+  -webkit-text-stroke: 1.5px #d4af37;
 }
 
 .text-outline-italic {
   color: transparent;
-  -webkit-text-stroke: 1px #f5f5f7;
+  -webkit-text-stroke: 1px #d4af37;
   font-style: italic;
 }
 
 .text-outline-faint {
   color: transparent;
-  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.18);
+  -webkit-text-stroke: 1px rgba(212, 175, 55, 0.25);
 }
 
 /* Hero */
@@ -482,13 +491,13 @@ body {
 }
 
 .landing-pill-btn-solid {
-  background: #f5f5f7;
+  background: #d4af37;
   color: #0b0b0f;
-  border-color: #f5f5f7;
+  border-color: #d4af37;
 }
 
 .landing-pill-btn-solid:hover {
-  background: #fff;
+  background: #f4d03f;
 }
 
 /* Live badge in hero */
@@ -517,8 +526,8 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 12px #4ade80;
+  background: #d4af37;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.9);
   animation: landing-pulse 2s infinite;
 }
 
@@ -561,7 +570,7 @@ body {
   }
 }
 
-/* Rainbow scroll progress bar */
+/* Gold scroll progress bar */
 .scroll-progress {
   position: fixed;
   top: 0;
@@ -571,12 +580,11 @@ body {
   z-index: 60;
   background: linear-gradient(
     90deg,
-    #e40303,
-    #ff8c00,
-    #ffed00,
-    #008026,
-    #004dff,
-    #732982
+    #8a6d1d,
+    #d4af37,
+    #f4d03f,
+    #d4af37,
+    #b8860b
   );
 }
 
@@ -602,12 +610,12 @@ body {
   letter-spacing: -0.02em;
   white-space: nowrap;
   padding-right: 2.5rem;
-  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.35);
+  -webkit-text-stroke: 1px rgba(212, 175, 55, 0.45);
   color: transparent;
 }
 
 .landing-marquee-inner span:nth-child(even) {
-  color: #f5f5f7;
+  color: #d4af37;
   -webkit-text-stroke: 0;
   font-style: italic;
 }
@@ -689,8 +697,8 @@ body {
 }
 
 .landing-pill-live {
-  border-color: #4ade80;
-  color: #4ade80;
+  border-color: #d4af37;
+  color: #d4af37;
 }
 
 /* FAQ */
@@ -715,7 +723,7 @@ body {
 }
 
 .landing-faq-item summary:hover {
-  color: #ff2d78;
+  color: #d4af37;
 }
 
 .landing-faq-item summary::after {
@@ -749,6 +757,100 @@ body {
 .landing-hours-row b {
   color: #f5f5f7;
   font-weight: 600;
+}
+
+/* Loyalty form */
+.landing-form {
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  background: rgba(212, 175, 55, 0.03);
+  padding: 2.5rem;
+  border-radius: 1rem;
+}
+
+.landing-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #d4af37;
+}
+
+.landing-input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  color: #f5f5f7;
+  border-radius: 0.5rem;
+  height: 3rem;
+}
+
+.landing-input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.landing-input:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
+.landing-input:disabled {
+  opacity: 0.5;
+}
+
+.landing-form-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  border-radius: 0.5rem;
+  background: rgba(212, 175, 55, 0.03);
+}
+
+.landing-checkbox {
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.landing-submit-btn {
+  background: #d4af37;
+  color: #0b0b0f;
+  font-weight: 700;
+  border: 0;
+  border-radius: 999px;
+  height: 3.25rem;
+}
+
+.landing-submit-btn:hover:not(:disabled) {
+  background: #f4d03f;
+}
+
+.landing-submit-btn:disabled {
+  opacity: 0.6;
+}
+
+/* Menu page */
+.landing-menu-card {
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  background: rgba(212, 175, 55, 0.03);
+  padding: 2rem 2.5rem;
+  border-radius: 1rem;
+}
+
+.landing-menu-card-title {
+  color: #d4af37;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.landing-menu-photo {
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(212, 175, 55, 0.15);
 }
 
 /* Footer */

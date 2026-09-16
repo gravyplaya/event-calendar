@@ -1,9 +1,18 @@
 'use client';
 
 import { motion, useInView } from 'framer-motion';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Mail, Phone, Gift } from 'lucide-react';
+import { toast } from 'sonner';
+import { subscribe } from '@/app/subscriber-actions';
+import { subscribeSchema, type SubscribeInput } from '@/lib/validations';
 import type { Events } from '@/types/event';
 
 const MONTHS = [
@@ -191,7 +200,13 @@ function SectionHeading({
 
 // ── Two floors ──
 export function NewFloorsSection() {
-  const floors = [
+  const floors: {
+    num: string;
+    tag: string;
+    title: string;
+    body: string;
+    comingSoon?: boolean;
+  }[] = [
     {
       num: '01',
       tag: 'Main Floor',
@@ -202,6 +217,7 @@ export function NewFloorsSection() {
       num: '02',
       tag: 'Downstairs',
       title: 'The Basement Speakeasy',
+      comingSoon: true,
       body: 'A hidden room below the restaurant. Intimate, dimly lit, and made for private events, live music, and late nights. Bring the right people.',
     },
   ];
@@ -223,6 +239,11 @@ export function NewFloorsSection() {
                 </div>
                 <h3 className="mt-4 text-2xl font-bold tracking-tight md:text-3xl">
                   {floor.title}
+                  {floor.comingSoon && (
+                    <span className="text-gold ml-3 align-middle text-sm font-semibold tracking-[0.15em] uppercase">
+                      (Coming Soon)
+                    </span>
+                  )}
                 </h3>
                 <p className="landing-body mt-4">{floor.body}</p>
               </div>
@@ -372,6 +393,212 @@ export function NewFaqVisitSection() {
               ))}
             </div>
           </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ── Loyalty signup ──
+export function NewLoyaltySection() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<SubscribeInput>({
+    resolver: zodResolver(subscribeSchema),
+    defaultValues: { smsOptIn: false },
+  });
+
+  const smsOptIn = watch('smsOptIn');
+
+  const onSubmit = async (data: SubscribeInput) => {
+    setIsLoading(true);
+    try {
+      const result = await subscribe(data);
+      if (result.success) {
+        toast.success(result.message || 'Welcome to The Nest Loyalty Program!');
+        reset();
+      } else if (result.error === 'already_subscribed') {
+        toast.info(
+          result.message ||
+            'You are already subscribed to The Nest loyalty program.',
+        );
+      } else {
+        toast.error(result.error || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <section id="rewards" className="landing-section landing-dark">
+      <Reveal>
+        <SectionHeading num="04" title="Join the" accent="rewards." />
+      </Reveal>
+      <div className="grid items-stretch gap-12 md:grid-cols-2">
+        <Reveal className="h-full">
+          <div className="landing-body flex h-full flex-col justify-center">
+            <p className="text-lg font-light text-white/80">
+              Earn points for every visit. Get food and drink discounts.
+            </p>
+            <p className="mt-4 text-white/50">
+              It&apos;s free to join — and you&apos;ll get{' '}
+              <span className="text-gold font-semibold">100 bonus points</span>{' '}
+              just for signing up.
+            </p>
+            <ul className="mt-8 space-y-4 text-sm text-white/50">
+              {[
+                'Points for every dollar you spend',
+                'Member-only food and drink specials',
+                'Early word on events before they land on the calendar',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <span className="bg-gold mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
+        <Reveal delay={0.15} className="h-full">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="landing-form h-full space-y-5"
+          >
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="loyalty-firstName" className="landing-label">
+                  First Name
+                </label>
+                <Input
+                  id="loyalty-firstName"
+                  placeholder="John"
+                  className="landing-input"
+                  {...register('firstName')}
+                  disabled={isLoading}
+                  aria-invalid={!!errors.firstName}
+                />
+                {errors.firstName && (
+                  <p className="text-sm text-red-400">
+                    {errors.firstName.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="loyalty-lastName" className="landing-label">
+                  Last Name
+                </label>
+                <Input
+                  id="loyalty-lastName"
+                  placeholder="Doe"
+                  className="landing-input"
+                  {...register('lastName')}
+                  disabled={isLoading}
+                  aria-invalid={!!errors.lastName}
+                />
+                {errors.lastName && (
+                  <p className="text-sm text-red-400">
+                    {errors.lastName.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="loyalty-email" className="landing-label">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="text-gold/50 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <Input
+                  id="loyalty-email"
+                  type="email"
+                  placeholder="john@example.com"
+                  className="landing-input pl-10"
+                  {...register('email')}
+                  disabled={isLoading}
+                  aria-invalid={!!errors.email}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-sm text-red-400">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="loyalty-phone" className="landing-label">
+                Phone Number{' '}
+                <span className="font-normal text-white/40">(optional)</span>
+              </label>
+              <div className="relative">
+                <Phone className="text-gold/50 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <Input
+                  id="loyalty-phone"
+                  type="tel"
+                  placeholder="(231) 555-0123"
+                  className="landing-input pl-10"
+                  {...register('phone')}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div className="landing-form-checkbox-row">
+              <Checkbox
+                id="loyalty-smsOptIn"
+                checked={smsOptIn}
+                onCheckedChange={(checked) => {
+                  setValue('smsOptIn', checked === true);
+                }}
+                disabled={isLoading}
+                className="landing-checkbox"
+              />
+              <div>
+                <label
+                  htmlFor="loyalty-smsOptIn"
+                  className="cursor-pointer text-sm font-medium"
+                >
+                  Send me text messages about events and specials
+                </label>
+                <p className="mt-0.5 text-xs text-white/40">
+                  Message rates may apply. Unsubscribe anytime.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              size="lg"
+              className="landing-submit-btn w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Joining...
+                </>
+              ) : (
+                <>
+                  <Gift className="mr-2 h-4 w-4" />
+                  Join The Nest Rewards
+                </>
+              )}
+            </Button>
+
+            <p className="text-center text-xs text-white/40">
+              By signing up, you agree to receive emails from The Nest. You can
+              unsubscribe at any time with one click.
+            </p>
+          </form>
         </Reveal>
       </div>
     </section>

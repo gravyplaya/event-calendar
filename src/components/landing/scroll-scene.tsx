@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-const RAINBOW = [0xe40303, 0xff8c00, 0xffed00, 0x008026, 0x004dff, 0x732982];
+// Black & gold palette — warm gold confetti with amber lights
+const GOLD = [0xd4af37, 0xf4d03f, 0xb8860b, 0xffd700, 0xc9a227, 0xe6c200];
 const CAMERA_JOURNEY = 60;
 
 /**
@@ -49,10 +50,10 @@ export function ScrollScene() {
     const keyLight = new THREE.PointLight(0xffffff, 260, 90);
     keyLight.position.set(10, 8, 14);
     scene.add(keyLight);
-    const rimA = new THREE.PointLight(RAINBOW[0], 200, 70);
+    const rimA = new THREE.PointLight(GOLD[0], 200, 70);
     rimA.position.set(-12, -6, -8);
     scene.add(rimA);
-    const rimB = new THREE.PointLight(RAINBOW[4], 200, 70);
+    const rimB = new THREE.PointLight(GOLD[2], 200, 70);
     rimB.position.set(12, -6, -6);
     scene.add(rimB);
 
@@ -66,7 +67,7 @@ export function ScrollScene() {
       positions[i * 3] = (Math.random() - 0.5) * 42;
       positions[i * 3 + 1] = (Math.random() - 0.5) * 70;
       positions[i * 3 + 2] = (Math.random() - 0.5) * 26;
-      color.setHex(RAINBOW[i % RAINBOW.length]);
+      color.setHex(GOLD[i % GOLD.length]);
       colors[i * 3] = color.r;
       colors[i * 3 + 1] = color.g;
       colors[i * 3 + 2] = color.b;
@@ -100,7 +101,7 @@ export function ScrollScene() {
     const confetti = new THREE.Points(pGeo, pMat);
     scene.add(confetti);
 
-    const rainbowHex = RAINBOW.map((h) => new THREE.Color(h));
+    const rainbowHex = GOLD.map((h) => new THREE.Color(h));
     let scrollY = 0;
     let smoothScroll = 0;
     let mouseX = 0;
@@ -148,15 +149,15 @@ export function ScrollScene() {
       torus.rotation.y = t * 0.16;
       torus.position.y = lerp(2, -CAMERA_JOURNEY * 0.55, p);
 
-      const idxF = p * RAINBOW.length;
-      const i0 = Math.floor(idxF) % RAINBOW.length;
-      const i1 = (i0 + 1) % RAINBOW.length;
+      const idxF = p * GOLD.length;
+      const i0 = Math.floor(idxF) % GOLD.length;
+      const i1 = (i0 + 1) % GOLD.length;
       rimA.color.lerpColors(
         rainbowHex[i0],
         rainbowHex[i1],
         idxF - Math.floor(idxF),
       );
-      rimB.color.copy(rimA.color).offsetHSL(0.33, 0, 0);
+      rimB.color.copy(rimA.color).offsetHSL(0.05, 0, 0);
 
       confetti.rotation.y = t * 0.03 + p * 1.2;
       confetti.position.y = p * -18;
