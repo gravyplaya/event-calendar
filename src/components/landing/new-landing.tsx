@@ -450,7 +450,7 @@ export function NewLoyaltySection() {
       </Reveal>
       <div className="grid items-stretch gap-12 md:grid-cols-2">
         <Reveal className="h-full">
-          <div className="landing-body flex h-full flex-col justify-center">
+          <div className="landing-body flex h-full flex-col justify-start pt-10">
             <p className="text-lg font-light text-white/80">
               Earn points for every visit. Get food and drink discounts.
             </p>
