@@ -1,7 +1,6 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ModeToggle } from './mode-toggel';
 import { usePathname } from 'next/navigation';
 import { docsConfig } from '@/configs/docs';
 
@@ -45,9 +44,6 @@ export default function Navbar() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-3">
-          <ModeToggle />
-        </div>
       </div>
     </header>
   );
