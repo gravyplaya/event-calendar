@@ -445,12 +445,15 @@ export function NewLoyaltySection() {
 
   return (
     <section id="rewards" className="landing-section landing-dark">
-      <Reveal>
-        <SectionHeading num="04" title="Join the" accent="rewards." />
-      </Reveal>
-      <div className="grid items-stretch gap-12 md:grid-cols-2">
+      <div className="grid items-start gap-12 md:grid-cols-2">
         <Reveal className="h-full">
-          <div className="landing-body flex h-full flex-col justify-start pt-10">
+          <div className="landing-body flex h-full flex-col justify-start">
+            <span className="text-xs tracking-[0.2em] text-white/30">04</span>
+            <h2 className="landing-h2 mb-8">
+              Join the
+              <br />
+              <em className="text-outline-italic">rewards.</em>
+            </h2>
             <p className="text-lg font-light text-white/80">
               Earn points for every visit. Get food and drink discounts.
             </p>
