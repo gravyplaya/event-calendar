@@ -94,7 +94,7 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
       {/* Background: interior photo (from the previous design), parallax +
           darkened so the Three.js scene and type stay legible */}
       <motion.div
-        className="absolute inset-0"
+        className="absolute inset-0 z-0"
         style={{ y: bgY, opacity: bgOpacity }}
       >
         <div
@@ -107,11 +107,11 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
         <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/40 to-black/80" />
       </motion.div>
 
-      <div className="relative flex items-center gap-4 text-xs tracking-[0.2em] text-white/50 uppercase">
+      <div className="relative z-10 flex items-center gap-4 text-xs tracking-[0.2em] text-white/50 uppercase">
         <span className="h-px w-10 bg-white/50" />
         333 W. Western Ave · Downtown Muskegon
       </div>
-      <h1 className="landing-hero-h1 mt-6">
+      <h1 className="landing-hero-h1 relative z-10 mt-6">
         {lines.map((line, i) => (
           <span key={i} className="block overflow-hidden">
             <span className={`block ${line.outline ? 'text-outline' : ''}`}>
@@ -120,11 +120,11 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
           </span>
         ))}
       </h1>
-      <p className="mt-8 max-w-prose text-lg font-light text-white/70">
+      <p className="relative z-10 mt-8 max-w-prose text-lg font-light text-white/70">
         An urban, all-inclusive gathering place. Good food, cold drinks, live
         entertainment — dinner upstairs, the night downstairs.
       </p>
-      <div className="mt-10 flex flex-wrap gap-4">
+      <div className="relative z-10 mt-10 flex flex-wrap gap-4">
         <Link
           href="#events"
           className="landing-pill-btn landing-pill-btn-solid"
@@ -136,7 +136,7 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
         </Link>
       </div>
       {tonightCount >= 0 && (
-        <div className="left-4vw absolute bottom-8">
+        <div className="left-4vw absolute bottom-8 z-10">
           <Link href="#events" className="landing-live-badge">
             <span className="landing-pulse-dot" />
             {tonightCount > 0
