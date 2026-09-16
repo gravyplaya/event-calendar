@@ -242,7 +242,7 @@ export default function MenuPage() {
           <h1 className="landing-hero-h1">
             <span className="text-outline-italic">Menu</span>
           </h1>
-          <p className="landing-body mt-4 text-center text-lg">
+          <p className="landing-body mx-auto mt-4 text-center text-lg">
             Southern comfort food, fresh-made, served late.
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/40">
