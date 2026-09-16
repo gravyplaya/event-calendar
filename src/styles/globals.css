@@ -853,6 +853,16 @@ body {
   border: 1px solid rgba(212, 175, 55, 0.15);
 }
 
+/* Calendar page */
+.landing-calendar-card {
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  background: rgba(11, 11, 15, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
 /* Footer */
 .landing-footer {
   padding: 10vh 4vw 5vh;
