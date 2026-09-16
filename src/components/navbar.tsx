@@ -30,14 +30,14 @@ export default function Navbar() {
           />
           <span className="text-xl font-semibold tracking-tight">The Nest</span>
         </Link>
-        <nav className="hidden md:flex md:items-center md:gap-6">
+        <nav className="flex items-center gap-4 md:gap-6">
           {docsConfig.mainNav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`text-base font-semibold transition-colors ${
+              className={`text-sm font-semibold transition-colors md:text-base ${
                 pathname === item.href
-                  ? 'text-primary'
+                  ? 'text-gold'
                   : 'text-foreground/80 hover:text-foreground'
               }`}
             >

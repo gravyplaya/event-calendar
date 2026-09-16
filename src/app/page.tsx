@@ -9,6 +9,7 @@ import {
   NewFloorsSection,
   NewEventsSection,
   NewFaqVisitSection,
+  NewLoyaltySection,
   NewFooter,
 } from '@/components/landing/new-landing';
 import type { Events } from '@/types/event';
@@ -71,12 +72,13 @@ export default async function IndexPage() {
       <ScrollScene />
       <div className="grain-overlay" aria-hidden="true" />
       <Navbar />
-      <main className="relative">
+      <main className="relative -mt-16">
         <NewHero tonightCount={tonightCount} />
         <NewMarquee />
         <NewFloorsSection />
         <NewEventsSection events={monthEvents} month={MONTHS[now.getMonth()]} />
         <NewFaqVisitSection />
+        <NewLoyaltySection />
       </main>
       <NewFooter />
     </div>

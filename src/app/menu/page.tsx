@@ -1,8 +1,9 @@
 import { MapPin, ArrowRight, Clock } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import Navbar from '@/components/navbar';
+import { ScrollScene } from '@/components/landing/scroll-scene';
+import { NewFooter } from '@/components/landing/new-landing';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -183,19 +184,19 @@ function MenuRow({ item }: { item: MenuItem }) {
       <div className="flex items-baseline gap-2">
         <span className="font-medium">{item.name}</span>
         {item.note && (
-          <span className="text-muted-foreground text-sm">— {item.note}</span>
+          <span className="text-sm text-white/40">— {item.note}</span>
         )}
         {item.price && (
           <>
-            <span className="text-muted-foreground flex-1 truncate border-b border-dotted border-white/15" />
-            <span className="text-primary font-semibold whitespace-nowrap">
+            <span className="flex-1 truncate border-b border-dotted border-white/15" />
+            <span className="text-gold font-semibold whitespace-nowrap">
               {item.price}
             </span>
           </>
         )}
       </div>
       {item.subItems && (
-        <ul className="text-muted-foreground ml-4 flex flex-wrap gap-x-4 gap-y-0.5 text-sm">
+        <ul className="ml-4 flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-white/40">
           {item.subItems.map((sub, i) => (
             <li key={i}>
               <span className={sub.note ? 'font-medium' : undefined}>
@@ -203,7 +204,7 @@ function MenuRow({ item }: { item: MenuItem }) {
               </span>
               {sub.note && <span> — {sub.note}</span>}
               {sub.price && (
-                <span className="text-primary/80"> — {sub.price}</span>
+                <span className="text-gold/80"> — {sub.price}</span>
               )}
             </li>
           ))}
@@ -215,10 +216,8 @@ function MenuRow({ item }: { item: MenuItem }) {
 
 function MenuCard({ section }: { section: MenuSection }) {
   return (
-    <div className="glass-strong border-rainbow rounded-2xl p-6 md:p-8">
-      <h3 className="text-rainbow mb-5 text-2xl font-bold tracking-tight">
-        {section.title}
-      </h3>
+    <div className="landing-menu-card">
+      <h3 className="landing-menu-card-title">{section.title}</h3>
       <ul className="space-y-3">
         {section.items.map((item, i) => (
           <MenuRow key={i} item={item} />
@@ -232,84 +231,78 @@ function MenuCard({ section }: { section: MenuSection }) {
 
 export default function MenuPage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="landing-dark relative min-h-screen bg-[#0b0b0f] text-[#f5f5f7]">
+      <ScrollScene />
+      <div className="grain-overlay" aria-hidden="true" />
       <Navbar />
 
-      <main className="flex-1 py-12 md:py-20">
-        <div className="container">
-          {/* Header */}
-          <div className="mx-auto mb-14 max-w-3xl text-center">
-            <h1 className="font-clash-display text-5xl font-bold tracking-tight">
-              <span className="text-rainbow">Menu</span>
-            </h1>
-            <p className="text-muted-foreground mt-4 text-lg">
-              Southern comfort food, fresh-made, served late.
-            </p>
-            <div className="text-muted-foreground mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
-              <span className="flex items-center gap-1.5">
-                <MapPin className="h-4 w-4" />
-                333 W. Western Ave, Suite B, Muskegon, MI 49440
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" />
-                Late-night menu until 1 hr before close
-              </span>
-            </div>
-          </div>
-
-          {/* Menu grid — two columns on desktop */}
-          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8">
-            {leftColumn.map((section, i) => (
-              <MenuCard key={`left-${i}`} section={section} />
-            ))}
-            {rightColumn.map((section, i) => (
-              <MenuCard key={`right-${i}`} section={section} />
-            ))}
-          </div>
-
-          {/* Tax note */}
-          <p className="mt-8 text-center text-sm font-medium tracking-wide">
-            All tax included.
+      <main className="landing-section relative">
+        {/* Header */}
+        <div className="mx-auto mb-14 max-w-3xl text-center">
+          <h1 className="landing-hero-h1">
+            <span className="text-outline-italic">Menu</span>
+          </h1>
+          <p className="landing-body mx-auto mt-4 text-center text-lg">
+            Southern comfort food, fresh-made, served late.
           </p>
-
-          {/* Reference photo */}
-          <div className="mx-auto mt-12 max-w-md">
-            <p className="text-muted-foreground mb-3 text-center text-xs">
-              The original, for reference:
-            </p>
-            <div className="glass-strong border-rainbow overflow-hidden rounded-2xl">
-              <Image
-                src="/menu.jpg"
-                alt="The Nest original menu"
-                width={600}
-                height={800}
-                className="h-auto w-full object-cover"
-              />
-            </div>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/40">
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-4 w-4" />
+              333 W. Western Ave, Suite B, Muskegon, MI 49440
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4" />
+              Late-night menu until 1 hr before close
+            </span>
           </div>
+        </div>
 
-          {/* CTA */}
-          <div className="mt-16 text-center">
-            <p className="text-muted-foreground">
-              Want to know what&apos;s happening tonight?
-            </p>
-            <Button size="lg" asChild className="mt-4">
-              <Link href="/calendar" className="gap-2">
-                View Events
-                <ArrowRight size={16} />
-              </Link>
-            </Button>
+        {/* Menu grid — two columns on desktop */}
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8">
+          {leftColumn.map((section, i) => (
+            <MenuCard key={`left-${i}`} section={section} />
+          ))}
+          {rightColumn.map((section, i) => (
+            <MenuCard key={`right-${i}`} section={section} />
+          ))}
+        </div>
+
+        {/* Tax note */}
+        <p className="mt-8 text-center text-sm font-medium tracking-wide text-white/50">
+          All tax included.
+        </p>
+
+        {/* Reference photo */}
+        <div className="mx-auto mt-12 max-w-md">
+          <p className="mb-3 text-center text-xs text-white/40">
+            The original, for reference:
+          </p>
+          <div className="landing-menu-photo">
+            <Image
+              src="/menu.jpg"
+              alt="The Nest original menu"
+              width={600}
+              height={800}
+              className="h-auto w-full object-cover"
+            />
           </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-16 text-center">
+          <p className="landing-body mx-auto text-center">
+            Want to know what&apos;s happening tonight?
+          </p>
+          <Link
+            href="/calendar"
+            className="landing-pill-btn landing-pill-btn-solid mt-4"
+          >
+            View Events <ArrowRight size={16} />
+          </Link>
         </div>
       </main>
 
-      <footer className="border-t border-white/5 py-8">
-        <div className="container text-center">
-          <p className="text-muted-foreground text-sm">
-            &copy; 2025 The Nest Restaurant and Nightclub. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <NewFooter />
     </div>
   );
 }

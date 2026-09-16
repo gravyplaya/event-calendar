@@ -1,9 +1,18 @@
 'use client';
 
-import { motion, useInView } from 'framer-motion';
-import { useRef, type ReactNode } from 'react';
+import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import { useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Mail, Phone, Gift } from 'lucide-react';
+import { toast } from 'sonner';
+import { subscribe } from '@/app/subscriber-actions';
+import { subscribeSchema, type SubscribeInput } from '@/lib/validations';
 import type { Events } from '@/types/event';
 
 const MONTHS = [
@@ -61,6 +70,15 @@ function Reveal({
 
 // ── Hero ──
 export function NewHero({ tonightCount }: { tonightCount: number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end start'],
+  });
+
+  const bgY = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
+  const bgOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+
   const lines = [
     { text: 'COME AS', outline: false },
     { text: 'YOU ARE.', outline: true },
@@ -69,44 +87,44 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
   ];
 
   return (
-    <div className="landing-dark px-4vw relative flex min-h-svh flex-col justify-center py-24">
-      <div className="flex items-center gap-4 text-xs tracking-[0.2em] text-white/50 uppercase">
+    <div
+      ref={containerRef}
+      className="landing-dark px-4vw relative flex min-h-svh flex-col justify-center overflow-hidden py-16 md:py-20"
+    >
+      {/* Background: interior photo (from the previous design), parallax +
+          darkened so the Three.js scene and type stay legible */}
+      <motion.div
+        className="absolute inset-0 z-0"
+        style={{ y: bgY, opacity: bgOpacity }}
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: 'url(/inside.jpg)',
+            filter: 'brightness(0.3) contrast(1.1) saturate(0.6)',
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/40 to-black/80" />
+      </motion.div>
+
+      <div className="relative z-10 flex items-center gap-4 text-xs tracking-[0.2em] text-white/50 uppercase">
         <span className="h-px w-10 bg-white/50" />
         333 W. Western Ave · Downtown Muskegon
       </div>
-      <h1 className="landing-hero-h1 mt-6">
+      <h1 className="landing-hero-h1 relative z-10 mt-6">
         {lines.map((line, i) => (
           <span key={i} className="block overflow-hidden">
-            <motion.span
-              className={`block ${line.outline ? 'text-outline' : ''}`}
-              initial={{ y: '110%' }}
-              animate={{ y: 0 }}
-              transition={{
-                duration: 1,
-                ease: [0.16, 1, 0.3, 1],
-                delay: i * 0.1,
-              }}
-            >
+            <span className={`block ${line.outline ? 'text-outline' : ''}`}>
               {line.text}
-            </motion.span>
+            </span>
           </span>
         ))}
       </h1>
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 0.6 }}
-        className="mt-8 max-w-prose text-lg font-light text-white/70"
-      >
+      <p className="relative z-10 mt-8 max-w-prose text-lg font-light text-white/70">
         An urban, all-inclusive gathering place. Good food, cold drinks, live
         entertainment — dinner upstairs, the night downstairs.
-      </motion.p>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 0.8 }}
-        className="mt-10 flex flex-wrap gap-4"
-      >
+      </p>
+      <div className="relative z-10 mt-10 flex flex-wrap gap-4">
         <Link
           href="#events"
           className="landing-pill-btn landing-pill-btn-solid"
@@ -116,21 +134,16 @@ export function NewHero({ tonightCount }: { tonightCount: number }) {
         <Link href="/menu" className="landing-pill-btn">
           See the menu
         </Link>
-      </motion.div>
+      </div>
       {tonightCount >= 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 1 }}
-          className="left-4vw absolute bottom-8"
-        >
+        <div className="left-4vw absolute bottom-8 z-10">
           <Link href="#events" className="landing-live-badge">
             <span className="landing-pulse-dot" />
             {tonightCount > 0
               ? `${tonightCount} event${tonightCount > 1 ? 's' : ''} happening tonight`
               : 'See what\u2019s on this month'}
           </Link>
-        </motion.div>
+        </div>
       )}
     </div>
   );
@@ -169,7 +182,7 @@ function SectionHeading({
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
   return (
-    <div ref={ref} className="mb-10 flex items-baseline gap-6">
+    <div ref={ref} className="mb-10">
       <span className="text-xs tracking-[0.2em] text-white/30">{num}</span>
       <motion.h2
         initial={{ opacity: 0, y: 30 }}
@@ -191,7 +204,13 @@ function SectionHeading({
 
 // ── Two floors ──
 export function NewFloorsSection() {
-  const floors = [
+  const floors: {
+    num: string;
+    tag: string;
+    title: string;
+    body: string;
+    comingSoon?: boolean;
+  }[] = [
     {
       num: '01',
       tag: 'Main Floor',
@@ -202,6 +221,7 @@ export function NewFloorsSection() {
       num: '02',
       tag: 'Downstairs',
       title: 'The Basement Speakeasy',
+      comingSoon: true,
       body: 'A hidden room below the restaurant. Intimate, dimly lit, and made for private events, live music, and late nights. Bring the right people.',
     },
   ];
@@ -223,6 +243,11 @@ export function NewFloorsSection() {
                 </div>
                 <h3 className="mt-4 text-2xl font-bold tracking-tight md:text-3xl">
                   {floor.title}
+                  {floor.comingSoon && (
+                    <span className="text-gold ml-3 align-middle text-sm font-semibold tracking-[0.15em] uppercase">
+                      (Coming Soon)
+                    </span>
+                  )}
                 </h3>
                 <p className="landing-body mt-4">{floor.body}</p>
               </div>
@@ -372,6 +397,215 @@ export function NewFaqVisitSection() {
               ))}
             </div>
           </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ── Loyalty signup ──
+export function NewLoyaltySection() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<SubscribeInput>({
+    resolver: zodResolver(subscribeSchema),
+    defaultValues: { smsOptIn: false },
+  });
+
+  const smsOptIn = watch('smsOptIn');
+
+  const onSubmit = async (data: SubscribeInput) => {
+    setIsLoading(true);
+    try {
+      const result = await subscribe(data);
+      if (result.success) {
+        toast.success(result.message || 'Welcome to The Nest Loyalty Program!');
+        reset();
+      } else if (result.error === 'already_subscribed') {
+        toast.info(
+          result.message ||
+            'You are already subscribed to The Nest loyalty program.',
+        );
+      } else {
+        toast.error(result.error || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <section id="rewards" className="landing-section landing-dark">
+      <div className="grid items-start gap-12 md:grid-cols-2">
+        <Reveal className="h-full">
+          <div className="landing-body flex h-full flex-col justify-start">
+            <span className="text-xs tracking-[0.2em] text-white/30">04</span>
+            <h2 className="landing-h2 mb-8">
+              Join the
+              <br />
+              <em className="text-outline-italic">rewards.</em>
+            </h2>
+            <p className="text-lg font-light text-white/80">
+              Earn points for every visit. Get food and drink discounts.
+            </p>
+            <p className="mt-4 text-white/50">
+              It&apos;s free to join — and you&apos;ll get{' '}
+              <span className="text-gold font-semibold">100 bonus points</span>{' '}
+              just for signing up.
+            </p>
+            <ul className="mt-8 space-y-4 text-sm text-white/50">
+              {[
+                'Points for every dollar you spend',
+                'Member-only food and drink specials',
+                'Early word on events before they land on the calendar',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <span className="bg-gold mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
+        <Reveal delay={0.15} className="h-full">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="landing-form h-full space-y-5"
+          >
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <label htmlFor="loyalty-firstName" className="landing-label">
+                  First Name
+                </label>
+                <Input
+                  id="loyalty-firstName"
+                  placeholder="John"
+                  className="landing-input"
+                  {...register('firstName')}
+                  disabled={isLoading}
+                  aria-invalid={!!errors.firstName}
+                />
+                {errors.firstName && (
+                  <p className="text-sm text-red-400">
+                    {errors.firstName.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="loyalty-lastName" className="landing-label">
+                  Last Name
+                </label>
+                <Input
+                  id="loyalty-lastName"
+                  placeholder="Doe"
+                  className="landing-input"
+                  {...register('lastName')}
+                  disabled={isLoading}
+                  aria-invalid={!!errors.lastName}
+                />
+                {errors.lastName && (
+                  <p className="text-sm text-red-400">
+                    {errors.lastName.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="loyalty-email" className="landing-label">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="text-gold/50 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <Input
+                  id="loyalty-email"
+                  type="email"
+                  placeholder="john@example.com"
+                  className="landing-input pl-10"
+                  {...register('email')}
+                  disabled={isLoading}
+                  aria-invalid={!!errors.email}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-sm text-red-400">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="loyalty-phone" className="landing-label">
+                Phone Number{' '}
+                <span className="font-normal text-white/40">(optional)</span>
+              </label>
+              <div className="relative">
+                <Phone className="text-gold/50 absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <Input
+                  id="loyalty-phone"
+                  type="tel"
+                  placeholder="(231) 555-0123"
+                  className="landing-input pl-10"
+                  {...register('phone')}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div className="landing-form-checkbox-row">
+              <Checkbox
+                id="loyalty-smsOptIn"
+                checked={smsOptIn}
+                onCheckedChange={(checked) => {
+                  setValue('smsOptIn', checked === true);
+                }}
+                disabled={isLoading}
+                className="landing-checkbox"
+              />
+              <div>
+                <label
+                  htmlFor="loyalty-smsOptIn"
+                  className="cursor-pointer text-sm font-medium"
+                >
+                  Send me text messages about events and specials
+                </label>
+                <p className="mt-0.5 text-xs text-white/40">
+                  Message rates may apply. Unsubscribe anytime.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              size="lg"
+              className="landing-submit-btn w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Joining...
+                </>
+              ) : (
+                <>
+                  <Gift className="mr-2 h-4 w-4" />
+                  Join The Nest Rewards
+                </>
+              )}
+            </Button>
+
+            <p className="text-center text-xs text-white/40">
+              By signing up, you agree to receive emails from The Nest. You can
+              unsubscribe at any time with one click.
+            </p>
+          </form>
         </Reveal>
       </div>
     </section>
