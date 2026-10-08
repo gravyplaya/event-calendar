@@ -44,7 +44,7 @@ export default async function IndexPage() {
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
 
-  const monthEvents: Events[] = eventsResult.success
+  const allMonthEvents: Events[] = eventsResult.success
     ? eventsResult.events
         .filter((event) => {
           const start = new Date(event.startDate);
@@ -61,11 +61,28 @@ export default async function IndexPage() {
   const endOfToday = new Date(startOfToday);
   endOfToday.setDate(endOfToday.getDate() + 1);
 
-  const tonightCount = monthEvents.filter((event) => {
+  const tonightCount = allMonthEvents.filter((event) => {
     const start = new Date(event.startDate);
     const end = new Date(event.endDate);
     return start < endOfToday && end > startOfToday;
   }).length;
+
+  // Bento grid: repeating series appear once — as the next upcoming
+  // occurrence (past occurrences this month are skipped; if every occurrence
+  // this month is past, the series drops out until its next one).
+  const seriesShown = new Set<string>();
+  const bentoEvents: Events[] = [];
+  for (const event of allMonthEvents) {
+    if (!event.isRepeating) {
+      bentoEvents.push(event);
+      continue;
+    }
+    const seriesId = event.id.split('__repeat_')[0];
+    if (seriesShown.has(seriesId)) continue;
+    if (new Date(event.startDate) < startOfToday) continue;
+    seriesShown.add(seriesId);
+    bentoEvents.push(event);
+  }
 
   return (
     <div className="landing-dark relative min-h-screen bg-[#0b0b0f] text-[#f5f5f7]">
@@ -76,7 +93,7 @@ export default async function IndexPage() {
         <NewHero tonightCount={tonightCount} />
         <NewMarquee />
         <NewFloorsSection />
-        <NewEventsSection events={monthEvents} month={MONTHS[now.getMonth()]} />
+        <NewEventsSection events={bentoEvents} month={MONTHS[now.getMonth()]} />
         <NewFaqVisitSection />
         <NewLoyaltySection />
       </main>

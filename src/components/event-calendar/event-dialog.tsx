@@ -12,14 +12,12 @@ import {
 import { ScrollArea } from '../ui/scroll-area';
 import { DeleteAlert } from '@/components/event-calendar/ui/delete-alert';
 import { FormFooter } from '@/components/event-calendar/ui/form-footer';
-import { Button } from '@/components/ui/button';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ensureDate } from '@/lib/date';
 import { useEventCalendarStore } from '@/hooks/use-event';
 import { eventFormSchema } from '@/lib/validations';
 import { EventDetailsForm } from './event-detail-form';
-import { EventPreview } from './event-preview';
 import { toast } from 'sonner';
 import { deleteEvent, updateEvent } from '@/app/actions';
 import { useShallow } from 'zustand/shallow';
@@ -167,31 +165,19 @@ export default function EventDialog({
     });
   };
 
+  useEffect(() => {
+    // Public visitors go to the event's own page instead of a modal
+    if (!isAdmin && isDialogOpen && selectedEvent?.id) {
+      closeEventDialog();
+      router.push(`/events/${selectedEvent.id}`);
+    }
+  }, [isAdmin, isDialogOpen, selectedEvent, closeEventDialog, router]);
+
   if (!isMounted) return null;
 
-  if (!isAdmin && selectedEvent) {
-    return (
-      <Dialog open={isDialogOpen} onOpenChange={closeEventDialog}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle>Event Details</DialogTitle>
-            <DialogDescription>{selectedEvent.title}</DialogDescription>
-          </DialogHeader>
-          <EventPreview event={selectedEvent} />
-          <DialogFooter className="mt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={closeEventDialog}
-              className="w-full sm:w-auto"
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  // Public visitors are redirected to the event's own page; never render
+  // the admin edit dialog for them.
+  if (!isAdmin) return null;
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={closeEventDialog}>

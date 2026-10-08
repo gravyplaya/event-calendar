@@ -329,6 +329,43 @@ export const searchEvents = cache(
   },
 );
 
+export async function getEventById(id: string) {
+  try {
+    // Client ids may carry the synthetic `__repeat_<n>` suffix for virtual
+    // occurrences of a repeating series — resolve to the parent row's uuid.
+    const realId = extractEventUuid(id);
+    const result = await db
+      .select()
+      .from(events)
+      .where(eq(events.id, realId))
+      .limit(1)
+      .execute();
+
+    const event = result[0];
+
+    if (!event) {
+      return { event: null, success: false, error: 'not_found' };
+    }
+
+    // Only expose approved events publicly; pending events are admin-only
+    if (!event.isApproved) {
+      const isAdmin = await isAdminAuthenticated();
+      if (!isAdmin) {
+        return { event: null, success: false, error: 'not_found' };
+      }
+    }
+
+    return { event, success: true };
+  } catch (error) {
+    console.error('❌ [getEventById] Error fetching event:', error);
+    return {
+      event: null,
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load event',
+    };
+  }
+}
+
 export async function getCategories() {
   try {
     const result = await db
@@ -534,6 +571,7 @@ export async function createEvent(values: z.infer<typeof createEventSchema>) {
         updatedAt: new Date(),
       });
 
+      revalidatePath('/');
       revalidatePath('/calendar');
       revalidatePath('/admin', 'layout');
       revalidatePath('/', 'layout');
@@ -606,6 +644,7 @@ export async function updateEvent(
       })
       .where(and(eq(events.id, realId)));
 
+    revalidatePath('/');
     revalidatePath('/calendar');
     revalidatePath('/admin', 'layout');
     revalidatePath('/', 'layout');
@@ -667,6 +706,7 @@ export async function deleteEvent(id: string) {
     await deleteFlyerFile(existingEvent[0].flyerUrl);
     await db.delete(events).where(and(eq(events.id, realId)));
 
+    revalidatePath('/');
     revalidatePath('/calendar');
     revalidatePath('/admin', 'layout');
     revalidatePath('/', 'layout');
@@ -711,6 +751,7 @@ export async function approveEvent(id: string) {
       .set({ isApproved: true, updatedAt: new Date() })
       .where(eq(events.id, realId));
 
+    revalidatePath('/');
     revalidatePath('/calendar');
     revalidatePath('/admin', 'layout');
     revalidatePath('/', 'layout');
@@ -741,6 +782,7 @@ export async function rejectEvent(id: string) {
     await deleteFlyerFile(existingEvent[0]?.flyerUrl ?? null);
     await db.delete(events).where(eq(events.id, realId));
 
+    revalidatePath('/');
     revalidatePath('/calendar');
     revalidatePath('/admin', 'layout');
     revalidatePath('/', 'layout');
