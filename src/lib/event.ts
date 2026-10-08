@@ -809,7 +809,7 @@ const REPEAT_INTERVAL_DAYS: Record<string, number> = {
  * calendar-aware (preserves day-of-month / Feb 29 semantics);
  * the rest are fixed-day intervals.
  */
-const advanceByRepeatType = (
+export const advanceByRepeatType = (
   date: Date,
   repeatingType: string | null,
 ): Date => {

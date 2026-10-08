@@ -279,10 +279,10 @@ export default function MenuPage() {
           </p>
           <div className="landing-menu-photo">
             <Image
-              src="/menu.jpg"
+              src="/newnewmenu.jpg"
               alt="The Nest original menu"
-              width={600}
-              height={800}
+              width={848}
+              height={1264}
               className="h-auto w-full object-cover"
             />
           </div>
@@ -294,7 +294,7 @@ export default function MenuPage() {
             Want to know what&apos;s happening tonight?
           </p>
           <Link
-            href="/calendar"
+            href="/#events"
             className="landing-pill-btn landing-pill-btn-solid mt-4"
           >
             View Events <ArrowRight size={16} />

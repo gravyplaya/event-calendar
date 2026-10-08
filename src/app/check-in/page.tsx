@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,12 +84,12 @@ function CheckInForm() {
             </p>
           </div>
         )}
-        <a
-          href="/calendar"
+        <Link
+          href="/#events"
           className="text-muted-foreground hover:text-foreground inline-block text-sm transition-colors"
         >
           View upcoming events →
-        </a>
+        </Link>
       </motion.div>
     );
   }

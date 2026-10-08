@@ -260,6 +260,90 @@ export function NewFloorsSection() {
 }
 
 // ── Events ──
+
+const BENTO_GRADIENTS: Record<string, string> = {
+  blue: 'from-blue-900 via-blue-950 to-black',
+  red: 'from-red-900 via-red-950 to-black',
+  lime: 'from-lime-900 via-lime-950 to-black',
+  green: 'from-green-900 via-green-950 to-black',
+  amber: 'from-amber-900 via-amber-950 to-black',
+  yellow: 'from-yellow-800 via-yellow-950 to-black',
+  purple: 'from-purple-900 via-purple-950 to-black',
+  pink: 'from-pink-900 via-pink-950 to-black',
+  indigo: 'from-indigo-900 via-indigo-950 to-black',
+  teal: 'from-teal-900 via-teal-950 to-black',
+};
+
+function BentoEventCard({
+  event,
+  featured,
+}: {
+  event: Events;
+  featured: boolean;
+}) {
+  const d = new Date(event.startDate);
+  const isToday = d.toDateString() === new Date().toDateString();
+  const loc = LOCATION_LABELS[event.location] ?? (event.location as string);
+  const gradient = BENTO_GRADIENTS[event.color] ?? BENTO_GRADIENTS.blue;
+
+  return (
+    <Link
+      href={`/events/${event.id}`}
+      className={`landing-bento-card group ${featured ? 'md:col-span-2 md:row-span-2' : ''}`}
+    >
+      {/* Image / gradient placeholder */}
+      <div
+        className={`relative overflow-hidden ${featured ? 'flex-1' : 'aspect-[4/3]'}`}
+      >
+        {event.flyerUrl ? (
+          <img
+            src={event.flyerUrl}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${gradient} transition-transform duration-700 group-hover:scale-105`}
+          >
+            <span className="text-xs font-semibold tracking-[0.25em] text-white/30 uppercase">
+              {event.category}
+            </span>
+          </div>
+        )}
+        {isToday && (
+          <span className="landing-pill landing-pill-live absolute top-4 left-4 bg-black/60 backdrop-blur-sm">
+            Tonight
+          </span>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex items-start justify-between gap-4 p-5">
+        <div className="min-w-0">
+          <div className="landing-event-meta">
+            {MONTHS[d.getMonth()]} {d.getDate()} · {loc}
+          </div>
+          <h3
+            className={`mt-1 leading-tight font-bold tracking-tight ${featured ? 'text-2xl md:text-3xl' : 'text-lg'}`}
+          >
+            {event.title}
+          </h3>
+          <div className="landing-event-meta mt-1">
+            {fmtTime(event.startTime)} – {fmtTime(event.endTime)}
+          </div>
+        </div>
+        <span
+          className={`landing-pill flex-shrink-0 transition-colors group-hover:border-[#d4af37] group-hover:text-[#d4af37] ${featured ? 'mt-1' : ''}`}
+        >
+          {isToday ? 'Tonight' : 'View'}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export function NewEventsSection({
   events,
   month,
@@ -267,69 +351,32 @@ export function NewEventsSection({
   events: Events[];
   month: string;
 }) {
+  const shown = events.slice(0, 5);
   return (
     <section id="events" className="landing-section landing-dark">
       <Reveal>
         <SectionHeading num="02" title="What's on" accent={`${month}.`} />
       </Reveal>
       <Reveal>
-        <div>
-          {events.length === 0 ? (
-            <div className="landing-event-row">
-              <div className="text-2xl font-extrabold">—</div>
-              <div>
-                <div className="text-lg font-semibold">
-                  Nothing on the books right now
-                </div>
-                <div className="landing-event-meta">
-                  Check back soon — new events land here first.
-                </div>
+        {shown.length === 0 ? (
+          <div className="landing-event-row">
+            <div className="text-2xl font-extrabold">—</div>
+            <div>
+              <div className="text-lg font-semibold">
+                Nothing on the books right now
+              </div>
+              <div className="landing-event-meta">
+                Check back soon — new events land here first.
               </div>
             </div>
-          ) : (
-            events.map((event) => {
-              const d = new Date(event.startDate);
-              const isToday = d.toDateString() === new Date().toDateString();
-              const loc =
-                LOCATION_LABELS[event.location] ?? (event.location as string);
-              return (
-                <Link
-                  key={event.id}
-                  href="/calendar"
-                  className="landing-event-row group"
-                >
-                  <div className="text-xl font-extrabold tracking-tight md:text-2xl">
-                    {d.toLocaleDateString('en-US', { weekday: 'short' })}
-                    <small className="block text-xs font-normal tracking-[0.15em] text-white/40 uppercase">
-                      {MONTHS[d.getMonth()]} {d.getDate()}
-                    </small>
-                  </div>
-                  <div>
-                    <div className="text-base font-semibold md:text-lg">
-                      {event.title}
-                    </div>
-                    <div className="landing-event-meta">
-                      {loc} · {fmtTime(event.startTime)} –{' '}
-                      {fmtTime(event.endTime)}
-                    </div>
-                  </div>
-                  <span
-                    className={`landing-pill ${isToday ? 'landing-pill-live' : ''}`}
-                  >
-                    {isToday ? 'Tonight' : 'View'}
-                  </span>
-                </Link>
-              );
-            })
-          )}
-        </div>
-      </Reveal>
-      <Reveal delay={0.1}>
-        <p className="mt-8 text-sm text-white/40">
-          <Link href="/calendar" className="text-white/60 hover:text-white">
-            See all events on the calendar →
-          </Link>
-        </p>
+          </div>
+        ) : (
+          <div className="landing-bento-grid">
+            {shown.map((event, i) => (
+              <BentoEventCard key={event.id} event={event} featured={i === 0} />
+            ))}
+          </div>
+        )}
       </Reveal>
     </section>
   );
@@ -448,7 +495,7 @@ export function NewLoyaltySection() {
       <div className="grid items-start gap-12 md:grid-cols-2">
         <Reveal className="h-full">
           <div className="landing-body flex h-full flex-col justify-start">
-            <span className="text-xs tracking-[0.2em] text-white/30">04</span>
+            <span className="text-xs tracking-[0.2em] text-white/30">05</span>
             <h2 className="landing-h2 mb-8">
               Join the
               <br />
